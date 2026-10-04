@@ -22,6 +22,7 @@ import { Recipe } from '../../types/recipe';
 import { useAppRouter } from '../../utils/navigation';
 import { useTheme } from '../../theme/ThemeProvider';
 import { palette, typography } from '../../theme/tokens';
+import { haptics } from '../../utils/haptics';
 
 export default function MyFoodScreen() {
   const router = useAppRouter();
@@ -38,12 +39,14 @@ export default function MyFoodScreen() {
   };
 
   const handleDelete = (id: string) => {
+    haptics.destructive();
     confirmAction({
       title: 'Delete Recipe',
       message: 'Are you sure you want to delete this recipe? This action cannot be undone.',
       confirmText: 'Delete',
       cancelText: 'Cancel',
       onConfirm: async () => {
+        haptics.destructive();
         await deleteRecipe(id);
       },
     });
@@ -104,9 +107,10 @@ export default function MyFoodScreen() {
         <FlatList
           data={userRecipes}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <RecipeCard
               recipe={item}
+              index={index}
               onToggleFavorite={toggleFavorite}
               showManageActions={true}
               onEdit={handleEdit}

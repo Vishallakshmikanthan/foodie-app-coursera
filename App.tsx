@@ -1,3 +1,4 @@
+import 'react-native-reanimated';
 import React from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';

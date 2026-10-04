@@ -6,12 +6,11 @@ import {
   TouchableOpacity,
   StyleProp,
   ViewStyle,
-  Platform,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { Minus, Plus, Users } from 'lucide-react-native';
 import { GlassSurface } from './ui/GlassSurface';
 import { palette, typography, radii } from '../theme/tokens';
+import { haptics } from '../utils/haptics';
 
 export interface ServingsControlBarProps {
   baseServings: number;
@@ -33,13 +32,7 @@ export const ServingsControlBar: React.FC<ServingsControlBarProps> = ({
   style,
 }) => {
   const triggerHaptic = () => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-    } catch {
-      // Fallback
-    }
+    haptics.servingsChange();
   };
 
   const handlePresetPress = (preset: number) => {

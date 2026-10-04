@@ -26,6 +26,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { useAppRouter } from '../../utils/navigation';
 import { useTheme } from '../../theme/ThemeProvider';
 import { palette, typography, radii } from '../../theme/tokens';
+import { haptics } from '../../utils/haptics';
 
 const QUICK_FILTERS = [
   { id: 'all', label: 'All Dishes' },
@@ -169,7 +170,10 @@ export default function ExploreScreen() {
               return (
                 <TouchableOpacity
                   key={filter.id}
-                  onPress={() => setActiveQuickFilter(filter.id)}
+                  onPress={() => {
+                    haptics.tabChange();
+                    setActiveQuickFilter(filter.id);
+                  }}
                   activeOpacity={0.7}
                   style={[
                     styles.quickFilterChip,
@@ -221,7 +225,10 @@ export default function ExploreScreen() {
               return (
                 <TouchableOpacity
                   key={cat}
-                  onPress={() => setSelectedCategory(cat)}
+                  onPress={() => {
+                    haptics.tabChange();
+                    setSelectedCategory(cat);
+                  }}
                   activeOpacity={0.7}
                   style={[
                     styles.catChip,
@@ -277,8 +284,8 @@ export default function ExploreScreen() {
           <FlatList
             data={filteredRecipes}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <RecipeCard recipe={item} onToggleFavorite={toggleFavorite} />
+            renderItem={({ item, index }) => (
+              <RecipeCard recipe={item} index={index} onToggleFavorite={toggleFavorite} />
             )}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}

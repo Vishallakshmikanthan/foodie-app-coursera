@@ -1,8 +1,16 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { TouchableOpacity, StyleSheet, ViewStyle, Platform } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 import { Heart } from 'lucide-react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { palette } from '../theme/tokens';
+import { haptics } from '../utils/haptics';
+import { useReducedMotion, motionTokens } from '../utils/motion';
 
 interface FavoriteButtonProps {
   isFavorite: boolean;
@@ -22,6 +30,35 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   inactiveColor,
 }) => {
   const { colors, isDark } = useTheme();
+  const isReducedMotion = useReducedMotion();
+
+  // Reanimated scale for heart spring pop
+  const scale = useSharedValue(1);
+
+  const animatedHeartStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  const handlePress = (e?: any) => {
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation();
+    }
+
+    // Trigger haptic feedback
+    haptics.favorite();
+
+    // Trigger spring-pop animation if reduce motion is off
+    if (!isReducedMotion && Platform.OS !== 'web') {
+      scale.value = withSequence(
+        withSpring(1.35, motionTokens.spring.bouncy),
+        withSpring(1, motionTokens.spring.snappy)
+      );
+    }
+
+    onPress();
+  };
 
   const heartActiveColor = activeColor || colors.favoriteActive;
   const heartInactiveColor = inactiveColor || (isDark ? colors.textSecondary : palette.gray[400]);
@@ -29,12 +66,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      onPress={(e) => {
-        if (e && typeof e.stopPropagation === 'function') {
-          e.stopPropagation();
-        }
-        onPress();
-      }}
+      onPress={handlePress}
       style={[
         styles.button,
         isDark ? styles.buttonDark : styles.buttonLight,
@@ -44,12 +76,14 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       accessibilityRole="button"
       accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
     >
-      <Heart
-        size={size}
-        color={isFavorite ? heartActiveColor : heartInactiveColor}
-        fill={isFavorite ? heartActiveColor : palette.transparent}
-        strokeWidth={2}
-      />
+      <Animated.View style={animatedHeartStyle}>
+        <Heart
+          size={size}
+          color={isFavorite ? heartActiveColor : heartInactiveColor}
+          fill={isFavorite ? heartActiveColor : palette.transparent}
+          strokeWidth={2}
+        />
+      </Animated.View>
     </TouchableOpacity>
   );
 };
@@ -85,3 +119,5 @@ const styles = StyleSheet.create({
     borderColor: palette.crimson[200],
   },
 });
+
+export default FavoriteButton;

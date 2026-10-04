@@ -9,15 +9,16 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, Play, Heart, Flame } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
 import { Recipe } from '../types/recipe';
 import { GlassSurface } from './ui/GlassSurface';
 import { GlassChip } from './ui/GlassChip';
+import { SharedImage } from './SharedImageTransition';
 import { palette, typography, radii, shadows } from '../theme/tokens';
 import { getCategoryTint, getDifficultyDots } from '../theme/categoryTints';
+import { haptics } from '../utils/haptics';
+import { useReducedMotion } from '../utils/motion';
 
 export interface HeroCardProps {
   recipe: Recipe;
@@ -60,40 +61,32 @@ export const HeroCard: React.FC<HeroCardProps> = ({
     }).start();
   };
 
-  const handleFavoritePress = () => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-    } catch {
-      // Fallback
-    }
+  const isReducedMotion = useReducedMotion();
 
-    Animated.sequence([
-      Animated.timing(heartScale, {
-        toValue: 1.35,
-        duration: 120,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-      Animated.spring(heartScale, {
-        toValue: 1,
-        tension: 60,
-        friction: 6,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-    ]).start();
+  const handleFavoritePress = () => {
+    haptics.favorite();
+
+    if (!isReducedMotion) {
+      Animated.sequence([
+        Animated.timing(heartScale, {
+          toValue: 1.35,
+          duration: 120,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.spring(heartScale, {
+          toValue: 1,
+          tension: 60,
+          friction: 6,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+      ]).start();
+    }
 
     onToggleFavorite(recipe.id);
   };
 
   const handleStartCookingPress = () => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-    } catch {
-      // Fallback
-    }
+    haptics.impactMedium();
     onPress(recipe);
   };
 
@@ -118,14 +111,13 @@ export const HeroCard: React.FC<HeroCardProps> = ({
         accessibilityRole="button"
         accessibilityLabel={`Featured recipe: ${recipe.name}`}
       >
-        {/* Full-bleed Food Image */}
-        <Image
+        {/* Full-bleed Food Image with Shared Transition Fallback */}
+        <SharedImage
+          recipeId={recipe.id}
           source={{ uri: recipe.image }}
           placeholder={{ blurhash: recipe.blurhash || tint.blurhash }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
-          transition={300}
-          cachePolicy="memory-disk"
         />
 
         {/* Top subtle scrim for badge visibility */}

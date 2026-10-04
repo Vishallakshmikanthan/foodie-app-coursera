@@ -10,10 +10,8 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import {
   ArrowLeft,
   Share2,
@@ -40,8 +38,10 @@ import { DetailTabs, DetailTabType } from '../../components/DetailTabs';
 import { GlassSurface } from '../../components/ui/GlassSurface';
 import { GlassIconButton } from '../../components/ui/GlassIconButton';
 import { GlassChip } from '../../components/ui/GlassChip';
+import { SharedImage } from '../../components/SharedImageTransition';
 import { palette, typography, radii } from '../../theme/tokens';
 import { getCategoryTint } from '../../theme/categoryTints';
+import { haptics } from '../../utils/haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_IMAGE_HEIGHT = Math.min(380, SCREEN_WIDTH * 0.95);
@@ -74,26 +74,18 @@ export default function RecipeDetailScreen() {
 
   const tint = recipe ? getCategoryTint(recipe.category) : getCategoryTint('Dinner');
 
-  const triggerLightHaptic = () => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-    } catch {
-      // Fallback
-    }
-  };
-
   const handleMultiplierChange = (newMult: number) => {
+    haptics.servingsChange();
     setCurrentServings(Math.round(baseServings * newMult));
   };
 
   const handleServingsChange = (newServings: number) => {
+    haptics.servingsChange();
     setCurrentServings(newServings);
   };
 
   const toggleCheckIngredient = (index: number) => {
-    triggerLightHaptic();
+    haptics.buttonPress();
     setCheckedIngredients((prev) => ({
       ...prev,
       [index]: !prev[index],
@@ -122,12 +114,14 @@ export default function RecipeDetailScreen() {
 
   const handleDelete = () => {
     if (!recipe) return;
+    haptics.destructive();
     confirmAction({
       title: 'Delete Recipe',
       message: 'Are you sure you want to delete this recipe? This cannot be undone.',
       confirmText: 'Delete',
       cancelText: 'Cancel',
       onConfirm: async () => {
+        haptics.destructive();
         await deleteRecipe(recipe.id);
         if (router.canGoBack()) {
           router.back();
@@ -140,7 +134,7 @@ export default function RecipeDetailScreen() {
 
   const handleStartCooking = (startAtStep?: number) => {
     if (!recipe) return;
-    triggerLightHaptic();
+    haptics.impactMedium();
     if (startAtStep !== undefined) {
       updateCookingProgress(recipe.id, startAtStep);
     }
@@ -152,7 +146,7 @@ export default function RecipeDetailScreen() {
 
   const handleResetProgressAndCook = () => {
     if (!recipe) return;
-    triggerLightHaptic();
+    haptics.impactMedium();
     updateCookingProgress(recipe.id, 1, []);
     router.push({
       pathname: `/cook/${recipe.id}`,
@@ -212,13 +206,12 @@ export default function RecipeDetailScreen() {
       >
         {/* Full-Bleed Hero Image Container */}
         <View style={styles.heroWrapper}>
-          <Image
+          <SharedImage
+            recipeId={recipe.id}
             source={{ uri: recipe.image }}
-            placeholder={recipe.blurhash || 'L5K-F@~q00%M4n_3%M?b00t7_3IU'}
+            placeholder={{ blurhash: recipe.blurhash || 'L5K-F@~q00%M4n_3%M?b00t7_3IU' }}
             style={styles.heroImage}
             contentFit="cover"
-            transition={300}
-            cachePolicy="memory-disk"
           />
 
           {/* Bottom Gradient Scrim into Forest Dark */}

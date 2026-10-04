@@ -8,8 +8,9 @@ import {
   Platform,
   LayoutChangeEvent,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { palette, typography } from '../theme/tokens';
+import { haptics } from '../utils/haptics';
+import { useReducedMotion } from '../utils/motion';
 
 export type DetailTabType = 'ingredients' | 'steps' | 'nutrition';
 
@@ -43,11 +44,12 @@ export const DetailTabs: React.FC<DetailTabsProps> = ({
   const indicatorWidth = useRef(new Animated.Value(0)).current;
   const isInitialized = useRef<boolean>(false);
 
+  const isReducedMotion = useReducedMotion();
   const useNative = Platform.OS !== 'web';
 
   const animateIndicator = useCallback(
     (targetLayout: { x: number; width: number }, immediate = false) => {
-      if (immediate || !isInitialized.current) {
+      if (immediate || !isInitialized.current || isReducedMotion) {
         indicatorX.setValue(targetLayout.x);
         indicatorWidth.setValue(targetLayout.width);
         isInitialized.current = true;
@@ -68,7 +70,7 @@ export const DetailTabs: React.FC<DetailTabsProps> = ({
         ]).start();
       }
     },
-    [indicatorX, indicatorWidth, useNative]
+    [indicatorX, indicatorWidth, useNative, isReducedMotion]
   );
 
   useEffect(() => {
@@ -89,13 +91,7 @@ export const DetailTabs: React.FC<DetailTabsProps> = ({
 
   const handleTabPress = (tabKey: DetailTabType) => {
     if (tabKey !== activeTab) {
-      try {
-        if (Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-      } catch {
-        // Fallback
-      }
+      haptics.tabChange();
       onTabChange(tabKey);
     }
   };

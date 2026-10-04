@@ -12,13 +12,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Compass, Heart, UtensilsCrossed } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { GlassBar } from './ui/GlassBar';
 import { useRecipes } from '../context/RecipeContext';
 import { useTheme } from '../theme/ThemeProvider';
 import { palette, typography } from '../theme/tokens';
 import { useAppRouter, useAppPathname } from '../utils/navigation';
+import { haptics } from '../utils/haptics';
+import { useReducedMotion } from '../utils/motion';
 
 export interface FloatingTabBarProps extends Partial<BottomTabBarProps> {
   visible?: boolean;
@@ -50,6 +51,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
   const router = useAppRouter();
 
   const [barWidth, setBarWidth] = useState<number>(0);
+  const isReducedMotion = useReducedMotion();
 
   const activeIconColor = isDark ? palette.mint[300] : palette.forest[900];
   const inactiveIconColor = isDark ? 'rgba(243, 247, 244, 0.55)' : palette.forest[600];
@@ -150,8 +152,9 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
     const tabWidth = barWidth / tabs.length;
     const targetX = activeIndex * tabWidth + (tabWidth - CIRCLE_SIZE) / 2;
 
-    if (!isInitialized.current) {
+    if (!isInitialized.current || isReducedMotion) {
       translateX.setValue(targetX);
+      scaleAnim.setValue(1);
       isInitialized.current = true;
     } else {
       Animated.parallel([
@@ -176,7 +179,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
         ]),
       ]).start();
     }
-  }, [activeIndex, barWidth, tabs.length, translateX, scaleAnim, useNative]);
+  }, [activeIndex, barWidth, tabs.length, translateX, scaleAnim, useNative, isReducedMotion]);
 
   const handleLayout = useCallback(
     (e: LayoutChangeEvent) => {
@@ -192,18 +195,8 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
     [barWidth, activeIndex, tabs.length, translateX]
   );
 
-  const triggerHaptic = () => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-    } catch {
-      // Graceful fallback
-    }
-  };
-
   const handleTabPress = (tab: TabConfig, index: number) => {
-    triggerHaptic();
+    haptics.tabChange();
 
     if (navigation && state) {
       const route = state.routes.find((r) => r.name === tab.name) || state.routes[index];

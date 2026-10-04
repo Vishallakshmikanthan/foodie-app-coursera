@@ -79,8 +79,8 @@ export default function FavoritesScreen() {
           <FlatList
             data={favoriteRecipes}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <RecipeCard recipe={item} onToggleFavorite={toggleFavorite} />
+            renderItem={({ item, index }) => (
+              <RecipeCard recipe={item} index={index} onToggleFavorite={toggleFavorite} />
             )}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}

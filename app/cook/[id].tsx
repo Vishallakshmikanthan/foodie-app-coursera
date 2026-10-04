@@ -38,6 +38,8 @@ import { GlassSurface } from '../../components/ui/GlassSurface';
 import { GlassIconButton } from '../../components/ui/GlassIconButton';
 import { palette, typography, radii } from '../../theme/tokens';
 import { getCategoryTint } from '../../theme/categoryTints';
+import { haptics } from '../../utils/haptics';
+import { useReducedMotion } from '../../utils/motion';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -58,6 +60,7 @@ export default function CookModeScreen() {
   const tint = recipe ? getCategoryTint(recipe.category) : getCategoryTint('Dinner');
 
   // Step state
+  const isReducedMotion = useReducedMotion();
   const totalSteps = recipe ? recipe.instructions.length : 1;
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -130,37 +133,27 @@ export default function CookModeScreen() {
 
   const handleTimerComplete = () => {
     setIsTimerFinishedAlert(true);
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } catch {
-      // Fallback
-    }
+    haptics.timerComplete();
 
-    // Pulse animation
-    Animated.sequence([
-      Animated.timing(timerPulseAnim, {
-        toValue: 1.15,
-        duration: 200,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-      Animated.spring(timerPulseAnim, {
-        toValue: 1,
-        friction: 4,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-    ]).start();
+    if (!isReducedMotion) {
+      // Pulse animation
+      Animated.sequence([
+        Animated.timing(timerPulseAnim, {
+          toValue: 1.15,
+          duration: 200,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.spring(timerPulseAnim, {
+          toValue: 1,
+          friction: 4,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+      ]).start();
+    }
   };
 
   const startTimer = (seconds: number, label: string) => {
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-    } catch {
-      // Fallback
-    }
+    haptics.impactMedium();
     setTimerTotal(seconds);
     setTimerSeconds(seconds);
     setTimerLabel(label);
@@ -187,12 +180,17 @@ export default function CookModeScreen() {
   const transitionToStep = (newIndex: number, direction: 'next' | 'prev') => {
     if (newIndex < 0 || newIndex >= totalSteps) return;
 
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptics.stepChange();
+
+    if (isReducedMotion) {
+      setCurrentStepIndex(newIndex);
+      const updatedCompleted = new Set(completedSteps);
+      if (direction === 'next') {
+        updatedCompleted.add(currentStepIndex + 1);
+        setCompletedSteps(updatedCompleted);
       }
-    } catch {
-      // Fallback
+      saveCurrentProgress(newIndex, updatedCompleted);
+      return;
     }
 
     const slideOut = direction === 'next' ? -50 : 50;
@@ -248,13 +246,7 @@ export default function CookModeScreen() {
       if (recipe) {
         clearCookingProgress(recipe.id);
       }
-      try {
-        if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
-      } catch {
-        // Fallback
-      }
+      haptics.timerComplete();
       setIsCompletedModalVisible(true);
     }
   };

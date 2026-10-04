@@ -7,15 +7,16 @@ import {
   Animated,
   Platform,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, Heart } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
 import { Recipe } from '../types/recipe';
 import { GlassSurface } from './ui/GlassSurface';
 import { GlassChip } from './ui/GlassChip';
+import { SharedImage } from './SharedImageTransition';
 import { palette, typography, radii } from '../theme/tokens';
 import { getCategoryTint, getDifficultyDots } from '../theme/categoryTints';
+import { haptics } from '../utils/haptics';
+import { useReducedMotion } from '../utils/motion';
 
 export interface PortraitCardProps {
   recipe: Recipe;
@@ -58,30 +59,27 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
     }).start();
   };
 
+  const isReducedMotion = useReducedMotion();
+
   const handleFavoritePress = (e?: any) => {
     e?.stopPropagation?.();
+    haptics.favorite();
 
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-    } catch {
-      // Fallback
+    if (!isReducedMotion) {
+      Animated.sequence([
+        Animated.timing(heartScale, {
+          toValue: 1.3,
+          duration: 100,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.spring(heartScale, {
+          toValue: 1,
+          tension: 60,
+          friction: 6,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+      ]).start();
     }
-
-    Animated.sequence([
-      Animated.timing(heartScale, {
-        toValue: 1.3,
-        duration: 100,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-      Animated.spring(heartScale, {
-        toValue: 1,
-        tension: 60,
-        friction: 6,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-    ]).start();
 
     onToggleFavorite(recipe.id);
   };
@@ -116,13 +114,12 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
 
         {/* Top Image Thumbnail */}
         <View style={styles.imageContainer}>
-          <Image
+          <SharedImage
+            recipeId={recipe.id}
             source={{ uri: recipe.image }}
             placeholder={{ blurhash: recipe.blurhash || tint.blurhash }}
             style={styles.image}
             contentFit="cover"
-            transition={250}
-            cachePolicy="memory-disk"
           />
 
           {/* Scrim for contrast */}

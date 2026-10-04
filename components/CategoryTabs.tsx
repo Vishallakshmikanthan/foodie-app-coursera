@@ -9,9 +9,10 @@ import {
   Platform,
   LayoutChangeEvent,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { CATEGORIES } from '../data/recipes';
 import { palette, typography, spacing } from '../theme/tokens';
+import { haptics } from '../utils/haptics';
+import { useReducedMotion } from '../utils/motion';
 
 export interface CategoryTabsProps {
   selectedCategory: string;
@@ -41,11 +42,12 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
   const indicatorWidth = useRef(new Animated.Value(0)).current;
   const isInitialized = useRef<boolean>(false);
 
+  const isReducedMotion = useReducedMotion();
   const useNative = Platform.OS !== 'web';
 
   const animateIndicator = useCallback(
     (targetLayout: TabLayoutData, immediate = false) => {
-      if (immediate || !isInitialized.current) {
+      if (immediate || !isInitialized.current || isReducedMotion) {
         indicatorX.setValue(targetLayout.x);
         indicatorWidth.setValue(targetLayout.width);
         isInitialized.current = true;
@@ -66,7 +68,7 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
         ]).start();
       }
     },
-    [indicatorX, indicatorWidth, useNative]
+    [indicatorX, indicatorWidth, useNative, isReducedMotion]
   );
 
   // Auto-scroll so the selected tab is comfortably centered
@@ -77,9 +79,9 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
         0,
         targetLayout.x - containerWidth / 2 + targetLayout.width / 2
       );
-      scrollViewRef.current.scrollTo({ x: targetScrollX, animated: true });
+      scrollViewRef.current.scrollTo({ x: targetScrollX, animated: !isReducedMotion });
     },
-    [containerWidth]
+    [containerWidth, isReducedMotion]
   );
 
   // Update underline when category changes or layout is ready
@@ -103,13 +105,7 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
 
   const handleTabPress = (category: string) => {
     if (category !== selectedCategory) {
-      try {
-        if (Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-      } catch {
-        // Fallback gracefully
-      }
+      haptics.tabChange();
       onSelectCategory(category);
     }
   };

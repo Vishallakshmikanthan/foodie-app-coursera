@@ -16,6 +16,7 @@ import { HeroCarousel } from '../../components/HeroCarousel';
 import { RecommendedRow } from '../../components/RecommendedRow';
 import { CategoryTabs } from '../../components/CategoryTabs';
 import { RecipeCard } from '../../components/RecipeCard';
+import { GlassRefreshControl } from '../../components/GlassRefreshControl';
 import { FeedSkeletonList } from '../../components/CardSkeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { useRecipes } from '../../context/RecipeContext';
@@ -101,11 +102,9 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           refreshControl={
-            <RefreshControl
+            <GlassRefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={palette.mint[300]}
-              colors={[palette.coral[500], palette.teal[400]]}
             />
           }
         >
@@ -183,10 +182,11 @@ export default function HomeScreen() {
             <FeedSkeletonList count={3} />
           ) : filteredRecipes.length > 0 ? (
             <View style={styles.cardsFeed}>
-              {filteredRecipes.map((item) => (
+              {filteredRecipes.map((item, index) => (
                 <RecipeCard
                   key={item.id}
                   recipe={item}
+                  index={index}
                   onToggleFavorite={toggleFavorite}
                 />
               ))}

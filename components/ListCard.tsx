@@ -9,17 +9,18 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, Flame, Users, Edit3, Trash2, Heart } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
 import { Recipe } from '../types/recipe';
 import { GlassSurface } from './ui/GlassSurface';
 import { GlassChip } from './ui/GlassChip';
+import { SharedImage } from './SharedImageTransition';
 import { useAppRouter } from '../utils/navigation';
 import { useTheme } from '../theme/ThemeProvider';
 import { palette, typography, radii, shadows } from '../theme/tokens';
 import { getCategoryTint, getDifficultyDots } from '../theme/categoryTints';
+import { haptics } from '../utils/haptics';
+import { useReducedMotion } from '../utils/motion';
 
 export interface ListCardProps {
   recipe: Recipe;
@@ -69,6 +70,8 @@ export const ListCard: React.FC<ListCardProps> = ({
     }).start();
   };
 
+  const isReducedMotion = useReducedMotion();
+
   const handleCardPress = () => {
     if (onPress) {
       onPress(recipe);
@@ -79,28 +82,23 @@ export const ListCard: React.FC<ListCardProps> = ({
 
   const handleFavoritePress = (e?: any) => {
     e?.stopPropagation?.();
+    haptics.favorite();
 
-    try {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-    } catch {
-      // Fallback
+    if (!isReducedMotion) {
+      Animated.sequence([
+        Animated.timing(heartScale, {
+          toValue: 1.35,
+          duration: 110,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.spring(heartScale, {
+          toValue: 1,
+          tension: 60,
+          friction: 6,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+      ]).start();
     }
-
-    Animated.sequence([
-      Animated.timing(heartScale, {
-        toValue: 1.35,
-        duration: 110,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-      Animated.spring(heartScale, {
-        toValue: 1,
-        tension: 60,
-        friction: 6,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-    ]).start();
 
     onToggleFavorite(recipe.id);
   };
@@ -137,13 +135,12 @@ export const ListCard: React.FC<ListCardProps> = ({
 
         {/* Top Image Container with Scrims */}
         <View style={styles.imageContainer}>
-          <Image
+          <SharedImage
+            recipeId={recipe.id}
             source={{ uri: recipe.image }}
             placeholder={{ blurhash: recipe.blurhash || tint.blurhash }}
             style={styles.image}
             contentFit="cover"
-            transition={300}
-            cachePolicy="memory-disk"
           />
 
           {/* Top Scrim for pill contrast */}
