@@ -12,8 +12,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, Heart } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Recipe } from '../types/recipe';
+import { GlassSurface } from './ui/GlassSurface';
 import { GlassChip } from './ui/GlassChip';
 import { palette, typography, radii } from '../theme/tokens';
+import { getCategoryTint, getDifficultyDots } from '../theme/categoryTints';
 
 export interface PortraitCardProps {
   recipe: Recipe;
@@ -35,11 +37,14 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
 
+  const tint = getCategoryTint(recipe.category);
+  const diffDots = getDifficultyDots(recipe.difficulty);
+
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.96,
-      tension: 60,
-      friction: 8,
+      toValue: 0.97,
+      tension: 65,
+      friction: 7,
       useNativeDriver: Platform.OS !== 'web',
     }).start();
   };
@@ -53,7 +58,9 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
     }).start();
   };
 
-  const handleFavoritePress = () => {
+  const handleFavoritePress = (e?: any) => {
+    e?.stopPropagation?.();
+
     try {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -83,7 +90,10 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
     <Animated.View
       style={[
         styles.cardContainer,
-        { transform: [{ scale: scaleAnim }] },
+        {
+          transform: [{ scale: scaleAnim }],
+          borderColor: tint.badgeBorder || 'rgba(252, 191, 164, 0.28)',
+        },
       ]}
     >
       <TouchableOpacity
@@ -95,13 +105,9 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
         accessibilityRole="button"
         accessibilityLabel={`Recommended recipe: ${recipe.name}`}
       >
-        {/* Peach tinted gradient surface per design tokens */}
+        {/* Category tinted gradient surface per design tokens */}
         <LinearGradient
-          colors={[
-            'rgba(252, 191, 164, 0.24)', // peach-200 tint
-            'rgba(240, 183, 159, 0.10)',
-            'rgba(27, 43, 47, 0.85)',
-          ]}
+          colors={tint.gradientOverlay}
           locations={[0.0, 0.35, 1.0]}
           start={{ x: 0.2, y: 0.0 }}
           end={{ x: 0.8, y: 1.0 }}
@@ -112,6 +118,7 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: recipe.image }}
+            placeholder={{ blurhash: recipe.blurhash || tint.blurhash }}
             style={styles.image}
             contentFit="cover"
             transition={250}
@@ -120,7 +127,7 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
 
           {/* Scrim for contrast */}
           <LinearGradient
-            colors={['rgba(14, 26, 23, 0.45)', 'transparent']}
+            colors={['rgba(14, 26, 23, 0.55)', 'transparent']}
             style={styles.imageScrim}
           />
 
@@ -130,11 +137,11 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
               label={`${recipe.preparationTime}m`}
               icon={Clock}
               size="sm"
-              variant="peach"
+              variant={tint.chipVariant}
             />
           </View>
 
-          {/* Favorite Heart */}
+          {/* Glass Favorite Heart Button */}
           <Animated.View
             style={[
               styles.favoriteWrapper,
@@ -146,13 +153,25 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
               activeOpacity={0.7}
               style={styles.heartButton}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              accessibilityRole="button"
+              accessibilityLabel={
+                recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'
+              }
             >
-              <Heart
-                size={16}
-                color={recipe.isFavorite ? palette.crimson[400] : palette.white}
-                fill={recipe.isFavorite ? palette.crimson[400] : 'transparent'}
-                strokeWidth={2.2}
-              />
+              <GlassSurface
+                variant="regular"
+                borderRadius={15}
+                intensity={35}
+                style={styles.favoriteGlass}
+                contentContainerStyle={styles.favoriteCenter}
+              >
+                <Heart
+                  size={14}
+                  color={recipe.isFavorite ? palette.crimson[400] : palette.white}
+                  fill={recipe.isFavorite ? palette.crimson[400] : 'transparent'}
+                  strokeWidth={2.2}
+                />
+              </GlassSurface>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -182,7 +201,13 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
             </View>
           ) : (
             <View style={styles.subtitleRow}>
-              <Text style={styles.categoryText}>{recipe.category}</Text>
+              <Text style={[styles.categoryText, { color: tint.accent }]}>
+                {recipe.category}
+              </Text>
+              <View style={styles.dot} />
+              <Text style={[styles.diffDots, { color: diffDots.color }]}>
+                {diffDots.dots}
+              </Text>
               <View style={styles.dot} />
               <Text style={styles.caloriesText}>{recipe.calories} kcal</Text>
             </View>
@@ -199,8 +224,7 @@ const styles = StyleSheet.create({
     height: 236,
     borderRadius: radii.xl,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(252, 191, 164, 0.28)',
+    borderWidth: 1.2,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -233,56 +257,62 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     left: 8,
-    zIndex: 2,
   },
   favoriteWrapper: {
     position: 'absolute',
     top: 8,
     right: 8,
-    zIndex: 2,
   },
   heartButton: {
+    borderRadius: 15,
+  },
+  favoriteGlass: {
     width: 30,
     height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(14, 26, 23, 0.60)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.20)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  favoriteCenter: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   body: {
     flex: 1,
-    padding: 10,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
     justifyContent: 'space-between',
   },
   title: {
+    fontSize: 14.5,
     fontFamily: typography.families.bold,
-    fontSize: 13.5,
-    lineHeight: 18,
-    color: palette.text.onDark,
+    color: palette.white,
+    lineHeight: 18.5,
   },
   subtitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
     marginTop: 4,
   },
   categoryText: {
-    fontFamily: typography.families.semiBold,
     fontSize: 11,
-    color: palette.peach[200],
+    fontFamily: typography.families.semiBold,
   },
   dot: {
-    width: 3,
-    height: 3,
+    width: 2.5,
+    height: 2.5,
     borderRadius: 1.5,
     backgroundColor: 'rgba(255, 255, 255, 0.35)',
-    marginHorizontal: 5,
+  },
+  diffDots: {
+    fontSize: 9.5,
+    letterSpacing: 0.8,
   },
   caloriesText: {
-    fontFamily: typography.families.medium,
     fontSize: 11,
-    color: palette.text.onDarkSecondary,
+    fontFamily: typography.families.medium,
+    color: palette.gray[400],
   },
   progressContainer: {
     marginTop: 4,
@@ -290,7 +320,7 @@ const styles = StyleSheet.create({
   progressBarsRow: {
     flexDirection: 'row',
     gap: 3,
-    marginBottom: 3,
+    marginBottom: 4,
   },
   stepBar: {
     flex: 1,
@@ -304,10 +334,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   progressText: {
-    fontFamily: typography.families.medium,
-    fontSize: 10,
+    fontSize: 10.5,
+    fontFamily: typography.families.semiBold,
     color: palette.peach[200],
   },
 });
-
-export default PortraitCard;

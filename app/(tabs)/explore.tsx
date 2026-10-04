@@ -21,6 +21,7 @@ import {
 import { GlassIconButton, GlassChip } from '../../components/ui';
 import { useRecipes } from '../../context/RecipeContext';
 import { RecipeCard } from '../../components/RecipeCard';
+import { FeedSkeletonList } from '../../components/CardSkeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { useAppRouter } from '../../utils/navigation';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -42,6 +43,7 @@ export default function ExploreScreen() {
     selectedCategory,
     setSelectedCategory,
     toggleFavorite,
+    isLoading,
   } = useRecipes();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -267,28 +269,32 @@ export default function ExploreScreen() {
         </View>
 
         {/* Recipe Cards List */}
-        <FlatList
-          data={filteredRecipes}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <RecipeCard recipe={item} onToggleFavorite={toggleFavorite} />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <EmptyState
-              icon={<CookingPot size={32} color={colors.textMuted} />}
-              title="No matching recipes found"
-              description={
-                searchQuery.trim().length > 0
-                  ? `No recipes match "${searchQuery}". Try a different keyword or reset active filters.`
-                  : 'No recipes found for the selected filter combination.'
-              }
-              actionText="Reset All Filters"
-              onAction={handleResetFilters}
-            />
-          }
-        />
+        {isLoading ? (
+          <FeedSkeletonList count={3} />
+        ) : (
+          <FlatList
+            data={filteredRecipes}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <RecipeCard recipe={item} onToggleFavorite={toggleFavorite} />
+            )}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <EmptyState
+                icon={<CookingPot size={32} color={colors.textMuted} />}
+                title="No matching recipes found"
+                description={
+                  searchQuery.trim().length > 0
+                    ? `No recipes match "${searchQuery}". Try a different keyword or reset active filters.`
+                    : 'No recipes found for the selected filter combination.'
+                }
+                actionText="Reset All Filters"
+                onAction={handleResetFilters}
+              />
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );

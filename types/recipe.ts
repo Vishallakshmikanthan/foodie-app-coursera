@@ -4,6 +4,7 @@ export interface Recipe {
   id: string;
   name: string;
   image: string;
+  blurhash?: string;
   category: string;
   ingredients: string[];
   instructions: string[];

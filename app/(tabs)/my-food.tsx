@@ -15,6 +15,7 @@ import {
 import { GlassSurface } from '../../components/ui';
 import { useRecipes } from '../../context/RecipeContext';
 import { RecipeCard } from '../../components/RecipeCard';
+import { FeedSkeletonList } from '../../components/CardSkeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { confirmAction } from '../../utils/recipeUtils';
 import { Recipe } from '../../types/recipe';
@@ -25,7 +26,7 @@ import { palette, typography } from '../../theme/tokens';
 export default function MyFoodScreen() {
   const router = useAppRouter();
   const { colors, isDark } = useTheme();
-  const { userRecipes, toggleFavorite, deleteRecipe } = useRecipes();
+  const { userRecipes, toggleFavorite, deleteRecipe, isLoading } = useRecipes();
 
   const showBackButton = router.canGoBack();
 
@@ -168,13 +169,17 @@ export default function MyFoodScreen() {
             </View>
           }
           ListEmptyComponent={
-            <EmptyState
-              icon={<ChefHat size={36} color={colors.primary} />}
-              title="No personal recipes yet"
-              description="You haven't created any recipes yet. Tap the '+ Add New Recipe' button above to create your first delicious masterpiece!"
-              actionText="+ Create Your First Recipe"
-              onAction={() => router.push('/add-recipe')}
-            />
+            isLoading ? (
+              <FeedSkeletonList count={2} />
+            ) : (
+              <EmptyState
+                icon={<ChefHat size={36} color={colors.primary} />}
+                title="No personal recipes yet"
+                description="You haven't created any recipes yet. Tap the '+ Add New Recipe' button above to create your first delicious masterpiece!"
+                actionText="+ Create Your First Recipe"
+                onAction={() => router.push('/add-recipe')}
+              />
+            )
           }
         />
 

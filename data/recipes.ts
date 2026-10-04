@@ -39,6 +39,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Avocado Toast with Poached Egg',
     image:
       'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L5K-F@~q00%M4n_3%M?b00t7_3IU',
     category: 'Breakfast',
     ingredients: [
       '2 thick slices sourdough bread',
@@ -69,6 +70,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Fluffy Blueberry Buttermilk Pancakes',
     image:
       'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L7IX2-~p00?b00_3%Mxu00Rj?bof',
     category: 'Breakfast',
     ingredients: [
       '2 cups all-purpose flour',
@@ -102,6 +104,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Classic Grilled Chicken Caesar Salad',
     image:
       'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L6K-e7~p00xt00?b%M_300xu_3of',
     category: 'Salads',
     ingredients: [
       '2 boneless skinless chicken breasts',
@@ -132,6 +135,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Creamy Tuscan Garlic Chicken',
     image:
       'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L5I#e|~q00?b00t7%M_300IU_3of',
     category: 'Dinner',
     ingredients: [
       '2 large chicken breasts, halved lengthwise',
@@ -165,6 +169,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Hearty Tomato Basil Bisque',
     image:
       'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L6K{9e_300IU00?b%Mxt00?b~qof',
     category: 'Soups',
     ingredients: [
       '2 cans (28 oz each) San Marzano whole peeled tomatoes',
@@ -197,6 +202,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Authentic Beef Bolognese with Tagliatelle',
     image:
       'https://images.unsplash.com/photo-1621996346565-e3d5d6281290?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L5Jk1r~p00of00t7%M_300IU_3j[',
     category: 'Dinner',
     ingredients: [
       '1 lb ground lean beef (85/15)',
@@ -232,6 +238,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Fresh Mango Strawberry Smoothie Bowl',
     image:
       'https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L9K-i{_300IU00?b%Mxt00?b~qof',
     category: 'Drinks',
     ingredients: [
       '2 cups frozen mango chunks',
@@ -262,6 +269,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Crispy Air-Fried Veggie Spring Rolls',
     image:
       'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L6I4G*~p00of00t7%M_300IU_3j[',
     category: 'Snacks',
     ingredients: [
       '12 spring roll wrappers',
@@ -293,6 +301,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Dark Chocolate Lava Molten Cake',
     image:
       'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L25q#g00~q0000_300%M00IU00?b',
     category: 'Desserts',
     ingredients: [
       '1/2 cup (1 stick) unsalted butter',
@@ -323,6 +332,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Mediterranean Quinoa Buddha Bowl',
     image:
       'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L8K-F?~q00%M4n_3%M?b00t7_3IU',
     category: 'Lunch',
     ingredients: [
       '1 cup tri-color quinoa, rinsed',
@@ -354,6 +364,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Slow-Cooker Chicken Tortilla Soup',
     image:
       'https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L6K{9e_300IU00?b%Mxt00?b~qof',
     category: 'Soups',
     ingredients: [
       '1 lb boneless skinless chicken breasts',
@@ -386,6 +397,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Homemade Margherita Pizza with Basil',
     image:
       'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L7I#e|~q00?b00t7%M_300IU_3of',
     category: 'Vegetarian',
     ingredients: [
       '1 ball artisan pizza dough (room temperature)',
@@ -416,6 +428,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Zesty Lemon Herb Baked Salmon',
     image:
       'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L9K{9e_300IU00?b%Mxt00?b~qof',
     category: 'Non-Vegetarian',
     ingredients: [
       '4 center-cut fresh Atlantic salmon fillets (6 oz each)',
@@ -446,6 +459,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Creamy Iced Matcha Green Tea Latte',
     image:
       'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L6K-e7~p00xt00?b%M_300xu_3of',
     category: 'Drinks',
     ingredients: [
       '1.5 tsp ceremonial grade Uji matcha powder',
@@ -473,7 +487,8 @@ export const SEED_RECIPES: Recipe[] = [
     id: 'seed-15',
     name: 'Loaded Guacamole with Tortilla Chips',
     image:
-      'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L7K-F@~q00%M4n_3%M?b00t7_3IU',
     category: 'Snacks',
     ingredients: [
       '3 ripe Hass avocados',
@@ -505,6 +520,7 @@ export const SEED_RECIPES: Recipe[] = [
     name: 'Spicy Thai Red Curry with Tofu',
     image:
       'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&w=800&q=80',
+    blurhash: 'L6I#e|~q00?b00t7%M_300IU_3of',
     category: 'Vegetarian',
     ingredients: [
       '1 block (14 oz) extra firm tofu, pressed and cubed',

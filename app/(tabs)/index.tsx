@@ -16,6 +16,7 @@ import { HeroCarousel } from '../../components/HeroCarousel';
 import { RecommendedRow } from '../../components/RecommendedRow';
 import { CategoryTabs } from '../../components/CategoryTabs';
 import { RecipeCard } from '../../components/RecipeCard';
+import { FeedSkeletonList } from '../../components/CardSkeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { useRecipes } from '../../context/RecipeContext';
 import { useAppRouter } from '../../utils/navigation';
@@ -177,12 +178,7 @@ export default function HomeScreen() {
 
           {/* Filtered Recipe Cards List */}
           {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={palette.coral[500]} />
-              <Text style={styles.loadingText}>
-                Curating exquisite recipes...
-              </Text>
-            </View>
+            <FeedSkeletonList count={3} />
           ) : filteredRecipes.length > 0 ? (
             <View style={styles.cardsFeed}>
               {filteredRecipes.map((item) => (

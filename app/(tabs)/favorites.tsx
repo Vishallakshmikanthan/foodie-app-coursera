@@ -11,6 +11,7 @@ import { ArrowLeft, Heart, Plus } from 'lucide-react-native';
 import { GlassIconButton } from '../../components/ui';
 import { useRecipes } from '../../context/RecipeContext';
 import { RecipeCard } from '../../components/RecipeCard';
+import { FeedSkeletonList } from '../../components/CardSkeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { useAppRouter } from '../../utils/navigation';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -19,7 +20,7 @@ import { palette, typography } from '../../theme/tokens';
 export default function FavoritesScreen() {
   const router = useAppRouter();
   const { colors, isDark } = useTheme();
-  const { favoriteRecipes, toggleFavorite } = useRecipes();
+  const { favoriteRecipes, toggleFavorite, isLoading } = useRecipes();
 
   const showBackButton = router.canGoBack();
 
@@ -72,30 +73,34 @@ export default function FavoritesScreen() {
         </View>
 
         {/* Favorite Recipes List */}
-        <FlatList
-          data={favoriteRecipes}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <RecipeCard recipe={item} onToggleFavorite={toggleFavorite} />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <EmptyState
-              icon={
-                <Heart
-                  size={36}
-                  color={colors.favoriteActive}
-                  fill={isDark ? 'rgba(248, 113, 113, 0.2)' : palette.crimson[100]}
-                />
-              }
-              title="No favorite recipes yet"
-              description="Explore mouthwatering recipes from our collection and tap the heart icon on any card to save your favorites here!"
-              actionText="Explore Recipes"
-              onAction={() => router.push('/explore')}
-            />
-          }
-        />
+        {isLoading ? (
+          <FeedSkeletonList count={3} />
+        ) : (
+          <FlatList
+            data={favoriteRecipes}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <RecipeCard recipe={item} onToggleFavorite={toggleFavorite} />
+            )}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <EmptyState
+                icon={
+                  <Heart
+                    size={36}
+                    color={colors.favoriteActive}
+                    fill={isDark ? 'rgba(248, 113, 113, 0.2)' : palette.crimson[100]}
+                  />
+                }
+                title="No favorite recipes yet"
+                description="Explore mouthwatering recipes from our collection and tap the heart icon on any card to save your favorites here!"
+                actionText="Explore Recipes"
+                onAction={() => router.push('/explore')}
+              />
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );

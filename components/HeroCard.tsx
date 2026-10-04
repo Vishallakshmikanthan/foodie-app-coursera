@@ -17,6 +17,7 @@ import { Recipe } from '../types/recipe';
 import { GlassSurface } from './ui/GlassSurface';
 import { GlassChip } from './ui/GlassChip';
 import { palette, typography, radii, shadows } from '../theme/tokens';
+import { getCategoryTint, getDifficultyDots } from '../theme/categoryTints';
 
 export interface HeroCardProps {
   recipe: Recipe;
@@ -38,11 +39,14 @@ export const HeroCard: React.FC<HeroCardProps> = ({
   const cardScale = useRef(new Animated.Value(1)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
 
+  const tint = getCategoryTint(recipe.category);
+  const diffDots = getDifficultyDots(recipe.difficulty);
+
   const handleCardPressIn = () => {
     Animated.spring(cardScale, {
-      toValue: 0.98,
-      tension: 60,
-      friction: 8,
+      toValue: 0.97,
+      tension: 65,
+      friction: 7,
       useNativeDriver: Platform.OS !== 'web',
     }).start();
   };
@@ -117,6 +121,7 @@ export const HeroCard: React.FC<HeroCardProps> = ({
         {/* Full-bleed Food Image */}
         <Image
           source={{ uri: recipe.image }}
+          placeholder={{ blurhash: recipe.blurhash || tint.blurhash }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           transition={300}
@@ -131,11 +136,11 @@ export const HeroCard: React.FC<HeroCardProps> = ({
           style={styles.topScrim}
         />
 
-        {/* Bottom deep gradient with signature teal glow from reference */}
+        {/* Bottom deep gradient with signature category glow and teal atmosphere */}
         <LinearGradient
           colors={[
             'rgba(14, 26, 23, 0.0)',
-            'rgba(73, 176, 161, 0.20)', // subtle teal glow
+            tint.glowColor || 'rgba(73, 176, 161, 0.20)', // category glow
             'rgba(14, 26, 23, 0.70)',
             'rgba(14, 26, 23, 0.95)',
           ]}
@@ -199,6 +204,10 @@ export const HeroCard: React.FC<HeroCardProps> = ({
               <View style={styles.metaRow}>
                 <Text style={styles.categoryBadgeText}>
                   {recipe.category.toUpperCase()}
+                </Text>
+                <View style={styles.dotSeparator} />
+                <Text style={{ fontSize: 11, color: diffDots.color, letterSpacing: 1 }}>
+                  {diffDots.dots}
                 </Text>
                 <View style={styles.dotSeparator} />
                 <View style={styles.caloriesRow}>
