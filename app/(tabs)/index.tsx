@@ -1,29 +1,27 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  FlatList,
+  ScrollView,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Search,
-  X,
-  Plus,
-  CookingPot,
-  Sparkles,
-} from 'lucide-react-native';
-import { GlassIconButton } from '../../components/ui';
-import { useRecipes } from '../../context/RecipeContext';
-import { CategoryBar } from '../../components/CategoryBar';
+import { CookingPot, Sparkles, Filter } from 'lucide-react-native';
+import { GradientBackground } from '../../components/ui/GradientBackground';
+import { HomeHeader } from '../../components/HomeHeader';
+import { HomeMenuModal } from '../../components/HomeMenuModal';
+import { HeroCarousel } from '../../components/HeroCarousel';
+import { RecommendedRow } from '../../components/RecommendedRow';
+import { CategoryTabs } from '../../components/CategoryTabs';
 import { RecipeCard } from '../../components/RecipeCard';
 import { EmptyState } from '../../components/EmptyState';
+import { useRecipes } from '../../context/RecipeContext';
 import { useAppRouter } from '../../utils/navigation';
 import { useTheme } from '../../theme/ThemeProvider';
 import { palette, typography } from '../../theme/tokens';
+import { Recipe } from '../../types/recipe';
 
 export default function HomeScreen() {
   const router = useAppRouter();
@@ -35,18 +33,34 @@ export default function HomeScreen() {
     searchQuery,
     setSearchQuery,
     toggleFavorite,
+    favoriteRecipes,
     isLoading,
+    refreshData,
   } = useRecipes();
 
-  // Filter recipes based on selected category and search query
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refreshData]);
+
+  // Filter recipes based on selected category and active search query
   const filteredRecipes = useMemo(() => {
     return recipes.filter((recipe) => {
-      // Category filter: 'All' matches all recipes
+      // Category filter: 'All' matches every recipe
       const matchesCategory =
         selectedCategory === 'All' ||
         recipe.category.toLowerCase() === selectedCategory.toLowerCase();
 
-      // Search filter: matches recipe name or any ingredient
+      // Search filter: matches recipe name, category or ingredients
       const query = searchQuery.trim().toLowerCase();
       const matchesSearch =
         query === '' ||
@@ -58,236 +72,225 @@ export default function HomeScreen() {
     });
   }, [recipes, selectedCategory, searchQuery]);
 
+  const handleRecipePress = useCallback(
+    (recipe: Recipe) => {
+      router.push(`/recipe/${recipe.id}`);
+    },
+    [router]
+  );
+
+  const handleSeeAllRecommended = useCallback(() => {
+    router.push('/explore');
+  }, [router]);
+
+  const handleFavoritesPress = useCallback(() => {
+    router.push('/favorites');
+  }, [router]);
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Top Header Section */}
-        <View style={[styles.header, { backgroundColor: colors.background }]}>
-          <View style={styles.brandRow}>
-            <View style={[styles.logoBadge, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
-              <CookingPot size={22} color={palette.white} strokeWidth={2.5} />
+    <View style={styles.rootContainer}>
+      {/* Full-bleed Signature Mint-to-Forest Atmosphere Gradient */}
+      <GradientBackground preset="mint-to-forest" fullScreen />
+
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={palette.mint[300]}
+              colors={[palette.coral[500], palette.teal[400]]}
+            />
+          }
+        >
+          {/* Top Header Row with Glass Controls & Time-Aware Greeting */}
+          <HomeHeader
+            userName="Alex"
+            favoritesCount={favoriteRecipes.length}
+            onPressMenu={() => setIsMenuOpen(true)}
+            onPressFavorites={handleFavoritesPress}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            isSearchOpen={isSearchOpen}
+            onToggleSearch={() => {
+              setIsSearchOpen((prev) => !prev);
+              if (isSearchOpen && searchQuery.length > 0) {
+                setSearchQuery('');
+              }
+            }}
+          />
+
+          {/* Hero Carousel (Only shown when not deeply searching to avoid competing focus) */}
+          {searchQuery.trim().length === 0 && (
+            <HeroCarousel
+              recipes={recipes}
+              onToggleFavorite={toggleFavorite}
+              onPressRecipe={handleRecipePress}
+            />
+          )}
+
+          {/* Recommended For You Section (Shown when no search query is active) */}
+          {searchQuery.trim().length === 0 && (
+            <RecommendedRow
+              recipes={recipes}
+              onToggleFavorite={toggleFavorite}
+              onPressRecipe={handleRecipePress}
+              onPressSeeAll={handleSeeAllRecommended}
+            />
+          )}
+
+          {/* Text-only Editorial Category Tabs with Sliding Underline */}
+          <CategoryTabs
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
+
+          {/* Feed Header info */}
+          <View style={styles.feedInfoRow}>
+            <View style={styles.feedTitleContainer}>
+              <Text style={styles.feedSectionTitle}>
+                {searchQuery.trim().length > 0
+                  ? 'Search Results'
+                  : selectedCategory === 'All'
+                  ? 'Curated Dishes'
+                  : `${selectedCategory} Dishes`}
+              </Text>
+              <View style={styles.feedBadge}>
+                <Text style={styles.feedBadgeText}>
+                  {filteredRecipes.length}
+                </Text>
+              </View>
             </View>
-            <View style={styles.brandTextContainer}>
-              <Text style={[styles.brandName, { color: colors.text }]}>Foodie</Text>
-              <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
-                Delicious meals made simple
+
+            {selectedCategory !== 'All' && (
+              <Text
+                style={styles.resetFilterText}
+                onPress={() => setSelectedCategory('All')}
+              >
+                Clear filter
+              </Text>
+            )}
+          </View>
+
+          {/* Filtered Recipe Cards List */}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={palette.coral[500]} />
+              <Text style={styles.loadingText}>
+                Curating exquisite recipes...
               </Text>
             </View>
-
-            {/* Quick Header Actions */}
-            <View style={styles.headerActions}>
-              <GlassIconButton
-                icon={Plus}
-                size={38}
-                iconSize={18}
-                variant="peach"
-                onPress={() => router.push('/add-recipe')}
-                accessibilityLabel="Quick Add Recipe"
-                accessibilityHint="Create a new custom recipe"
-              />
-
-              <GlassIconButton
-                icon={Sparkles}
-                size={38}
-                iconSize={18}
-                variant="mint"
-                onPress={() => router.push('/glass-preview')}
-                accessibilityLabel="Glass UI Kit Preview"
-                accessibilityHint="Opens the Phase 2 Glass UI Kit preview screen"
-              />
+          ) : filteredRecipes.length > 0 ? (
+            <View style={styles.cardsFeed}>
+              {filteredRecipes.map((item) => (
+                <RecipeCard
+                  key={item.id}
+                  recipe={item}
+                  onToggleFavorite={toggleFavorite}
+                />
+              ))}
             </View>
-          </View>
-
-          {/* Welcoming Message & Subheader */}
-          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
-            What would you like to cook today? ✨
-          </Text>
-
-          {/* Search Field */}
-          <View
-            style={[
-              styles.searchBar,
-              {
-                backgroundColor: colors.inputBackground,
-                borderColor: colors.inputBorder,
-              },
-            ]}
-          >
-            <Search size={18} color={colors.textMuted} style={styles.searchIcon} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search recipes, ingredients, tags..."
-              placeholderTextColor={colors.textMuted}
-              style={[styles.searchInput, { color: colors.text }]}
-              clearButtonMode="while-editing"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setSearchQuery('')}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <X size={16} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* Horizontal Category Bar */}
-        <CategoryBar
-          selectedCategory={selectedCategory}
-          onSelectCategory={(cat) => setSelectedCategory(cat)}
-        />
-
-        {/* Recipe Feed Header */}
-        <View style={styles.feedInfoBar}>
-          <Text style={[styles.feedTitle, { color: colors.text }]}>
-            {selectedCategory === 'All' ? 'All Recipes' : `${selectedCategory} Recipes`}
-          </Text>
-          <Text style={[styles.feedCount, { color: colors.textSecondary }]}>
-            {filteredRecipes.length} {filteredRecipes.length === 1 ? 'recipe' : 'recipes'}
-          </Text>
-        </View>
-
-        {/* Recipe Feed List */}
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-              Loading fresh recipes...
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filteredRecipes}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <RecipeCard recipe={item} onToggleFavorite={toggleFavorite} />
-            )}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
+          ) : (
+            <View style={styles.emptyContainer}>
               <EmptyState
-                icon={<CookingPot size={32} color={colors.textMuted} />}
+                icon={<CookingPot size={36} color={palette.mint[300]} />}
                 title="No recipes found"
                 description={
                   searchQuery.trim().length > 0
-                    ? `No recipes match "${searchQuery}". Try a different search term or reset filters.`
-                    : `No recipes found in ${selectedCategory} category.`
+                    ? `No culinary matches found for "${searchQuery}". Try different keywords or reset filter.`
+                    : `No recipes found in the ${selectedCategory} category yet.`
                 }
-                actionText="Reset Filter"
+                actionText="Reset Filters"
                 onAction={() => {
                   setSelectedCategory('All');
                   setSearchQuery('');
                 }}
               />
-            }
-          />
-        )}
-      </View>
-    </SafeAreaView>
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+
+      {/* Side Menu Drawer / Modal */}
+      <HomeMenuModal
+        visible={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        userName="Alex"
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: palette.forest[900],
+  },
   safeArea: {
     flex: 1,
   },
-  container: {
-    flex: 1,
+  scrollContent: {
+    // Generous bottom padding so floating glass tab bar doesn't overlap any recipe
+    paddingBottom: 125,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  brandRow: {
+  feedInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 14,
   },
-  logoBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  brandTextContainer: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  brandName: {
-    fontSize: 20,
-    fontFamily: typography.families.bold,
-    letterSpacing: -0.3,
-  },
-  greetingText: {
-    fontSize: 12,
-    fontFamily: typography.families.medium,
-    marginTop: 1,
-  },
-  headerActions: {
+  feedTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  welcomeTitle: {
-    fontSize: 17,
+  feedSectionTitle: {
     fontFamily: typography.families.bold,
-    marginTop: 2,
-    marginBottom: 10,
-    lineHeight: 22,
+    fontSize: 19,
+    color: palette.text.onDark,
+    letterSpacing: -0.3,
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
+  feedBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    height: 44,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
   },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: typography.families.regular,
-    padding: 0,
-  },
-  feedInfoBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  feedTitle: {
-    fontSize: 17,
+  feedBadgeText: {
     fontFamily: typography.families.bold,
+    fontSize: 12,
+    color: palette.mint[300],
   },
-  feedCount: {
+  resetFilterText: {
+    fontFamily: typography.families.semiBold,
     fontSize: 13,
-    fontFamily: typography.families.medium,
+    color: palette.peach[300],
+    paddingVertical: 4,
+    paddingLeft: 8,
   },
-  listContent: {
+  cardsFeed: {
     paddingHorizontal: 16,
-    paddingBottom: 110,
   },
   loadingContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 50,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
     fontFamily: typography.families.medium,
+    color: palette.text.onDarkSecondary,
+  },
+  emptyContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
 });
