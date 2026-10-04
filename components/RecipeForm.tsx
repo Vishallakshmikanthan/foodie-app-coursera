@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';

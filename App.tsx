@@ -12,6 +12,7 @@ import MyFoodScreen from './app/my-food';
 import AddRecipeScreen from './app/add-recipe';
 import EditRecipeScreen from './app/edit-recipe';
 import RecipeDetailScreen from './app/recipe/[id]';
+import GlassPreviewScreen from './app/glass-preview';
 
 function SnackScreenRenderer() {
   const pathname = useAppPathname();
@@ -30,6 +31,9 @@ function SnackScreenRenderer() {
   }
   if (pathname === '/recipe' || pathname.startsWith('/recipe/')) {
     return <RecipeDetailScreen />;
+  }
+  if (pathname === '/glass-preview') {
+    return <GlassPreviewScreen />;
   }
 
   return <HomeScreen />;

@@ -15,7 +15,9 @@ import {
   Heart,
   ChefHat,
   CookingPot,
+  Sparkles,
 } from 'lucide-react-native';
+import { GlassIconButton } from '../components/ui';
 import { useRecipes } from '../context/RecipeContext';
 import { CategoryBar } from '../components/CategoryBar';
 import { RecipeCard } from '../components/RecipeCard';
@@ -117,6 +119,16 @@ export default function HomeScreen() {
               >
                 <ChefHat size={20} color={colors.primary} />
               </TouchableOpacity>
+
+              <GlassIconButton
+                icon={Sparkles}
+                size={38}
+                iconSize={18}
+                variant="mint"
+                onPress={() => router.push('/glass-preview')}
+                accessibilityLabel="Glass UI Kit Preview"
+                accessibilityHint="Opens the Phase 2 Glass UI Kit preview screen"
+              />
             </View>
           </View>
 

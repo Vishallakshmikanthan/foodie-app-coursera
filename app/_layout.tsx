@@ -60,6 +60,7 @@ export default function RootLayout() {
             <Stack.Screen name="add-recipe" />
             <Stack.Screen name="edit-recipe" />
             <Stack.Screen name="recipe/[id]" />
+            <Stack.Screen name="glass-preview" />
           </Stack>
         </RecipeProvider>
       </ThemeProvider>
