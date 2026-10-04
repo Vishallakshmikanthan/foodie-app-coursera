@@ -8,6 +8,7 @@ export interface AppNavRoute {
 
 export interface AppRouterType {
   push: (route: string | AppNavRoute) => void;
+  navigate: (route: string | AppNavRoute) => void;
   replace: (route: string | AppNavRoute) => void;
   back: () => void;
   canGoBack: () => boolean;
@@ -16,6 +17,8 @@ export interface AppRouterType {
 }
 
 export const AppNavigationContext = createContext<AppRouterType | null>(null);
+
+const TAB_ROUTES = new Set(['/', '/index', '/explore', '/favorites', '/my-food']);
 
 export const AppNavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [history, setHistory] = useState<AppNavRoute[]>([{ pathname: '/' }]);
@@ -42,10 +45,28 @@ export const AppNavigationProvider: React.FC<{ children: React.ReactNode }> = ({
     return route;
   };
 
+  const navigate = useCallback((route: string | AppNavRoute) => {
+    const parsed = parseRoute(route);
+    const isTab = TAB_ROUTES.has(parsed.pathname);
+
+    setHistory((prev) => {
+      const current = prev[prev.length - 1];
+      // If switching between tabs, replace the top tab so the history does not grow endlessly
+      if (isTab && current && TAB_ROUTES.has(current.pathname)) {
+        return [...prev.slice(0, prev.length - 1), parsed];
+      }
+      return [...prev, parsed];
+    });
+  }, []);
+
   const push = useCallback((route: string | AppNavRoute) => {
     const parsed = parseRoute(route);
-    setHistory((prev) => [...prev, parsed]);
-  }, []);
+    if (TAB_ROUTES.has(parsed.pathname)) {
+      navigate(parsed);
+    } else {
+      setHistory((prev) => [...prev, parsed]);
+    }
+  }, [navigate]);
 
   const replace = useCallback((route: string | AppNavRoute) => {
     const parsed = parseRoute(route);
@@ -64,6 +85,7 @@ export const AppNavigationProvider: React.FC<{ children: React.ReactNode }> = ({
     <AppNavigationContext.Provider
       value={{
         push,
+        navigate,
         replace,
         back,
         canGoBack,
@@ -85,20 +107,32 @@ export function useAppRouter(): AppRouterType {
   // Fallback to Expo Router
   try {
     const expoRouter = useExpoRouter();
+
+    const navigate = (route: string | AppNavRoute) => {
+      const target = typeof route === 'string' ? route : route.pathname;
+      if (typeof expoRouter.navigate === 'function') {
+        expoRouter.navigate(target as any);
+      } else {
+        expoRouter.push(target as any);
+      }
+    };
+
+    const push = (route: string | AppNavRoute) => {
+      const target = typeof route === 'string' ? route : route.pathname;
+      // If target is one of the main tabs, navigate instead of pushing to prevent stack explosion
+      if (TAB_ROUTES.has(target)) {
+        navigate(route);
+      } else {
+        expoRouter.push(target as any);
+      }
+    };
+
     return {
-      push: (route) => {
-        if (typeof route === 'string') {
-          expoRouter.push(route as any);
-        } else {
-          expoRouter.push(route as any);
-        }
-      },
+      push,
+      navigate,
       replace: (route) => {
-        if (typeof route === 'string') {
-          expoRouter.replace(route as any);
-        } else {
-          expoRouter.replace(route as any);
-        }
+        const target = typeof route === 'string' ? route : route.pathname;
+        expoRouter.replace(target as any);
       },
       back: () => {
         if (expoRouter.canGoBack()) {
@@ -114,6 +148,7 @@ export function useAppRouter(): AppRouterType {
   } catch {
     return {
       push: () => {},
+      navigate: () => {},
       replace: () => {},
       back: () => {},
       canGoBack: () => false,

@@ -174,16 +174,37 @@ export const GlassSurface: React.FC<GlassSurfaceProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    AccessibilityInfo.isReduceTransparencyEnabled().then((enabled) => {
-      if (isMounted) setReduceTransparency(enabled);
-    });
 
-    const subscription = AccessibilityInfo.addEventListener(
-      'reduceTransparencyChanged',
-      (enabled) => {
-        setReduceTransparency(enabled);
+    // AccessibilityInfo reduce transparency is mobile-only; skip entirely on web
+    if (Platform.OS !== 'web' && typeof AccessibilityInfo?.isReduceTransparencyEnabled === 'function') {
+      try {
+        AccessibilityInfo.isReduceTransparencyEnabled()
+          .then((enabled) => {
+            if (isMounted) {
+              setReduceTransparency(Boolean(enabled));
+            }
+          })
+          .catch(() => {});
+      } catch {
+        // Safe fallback
       }
-    );
+    }
+
+    let subscription: { remove?: () => void } | null = null;
+    if (Platform.OS !== 'web' && typeof AccessibilityInfo?.addEventListener === 'function') {
+      try {
+        subscription = AccessibilityInfo.addEventListener(
+          'reduceTransparencyChanged',
+          (enabled: boolean) => {
+            if (isMounted) {
+              setReduceTransparency(Boolean(enabled));
+            }
+          }
+        );
+      } catch {
+        // Listener not supported
+      }
+    }
 
     return () => {
       isMounted = false;
@@ -258,7 +279,7 @@ export const GlassSurface: React.FC<GlassSurfaceProps> = ({
             intensity={intensity}
             tint={effectiveTint}
             style={[StyleSheet.absoluteFill, { borderRadius }]}
-            experimentalBlurMethod="dimezisBlurViewSdk31Plus"
+            experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurViewSdk31Plus' : undefined}
           />
         )
       ) : (
@@ -279,8 +300,8 @@ export const GlassSurface: React.FC<GlassSurfaceProps> = ({
           colors={config.gradientColors}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={[StyleSheet.absoluteFill, { borderRadius }]}
-          pointerEvents="none"
+          {...(Platform.OS !== 'web' ? { pointerEvents: 'none' as const } : {})}
+          style={[StyleSheet.absoluteFill, { borderRadius, pointerEvents: 'none' as const }]}
         />
       )}
 

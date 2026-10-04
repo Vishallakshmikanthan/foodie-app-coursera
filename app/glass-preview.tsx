@@ -35,6 +35,7 @@ import {
   GlassChip,
   GlassBar,
   GradientBackground,
+  FloatingTabBar,
 } from '../components/ui';
 import { palette, typography, radii, spacing, shadows } from '../theme/tokens';
 
@@ -486,6 +487,25 @@ export default function GlassPreviewScreen() {
           </GlassSurface>
         </View>
 
+        {/* SECTION 6: Floating Tab Bar (M2) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeading}>6. Floating Glass Tab Bar (M2)</Text>
+          <Text style={styles.sectionDescription}>
+            Pill-shaped frosted glass nav bar with animated active glass circle, favorites count badge, and spring physics.
+          </Text>
+          <View style={styles.tabBarPreviewBox}>
+            <FloatingTabBar
+              containerStyle={{
+                position: 'relative',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                marginVertical: 12,
+              }}
+            />
+          </View>
+        </View>
+
         {/* Status Confirmation Badge */}
         <View style={styles.statusBadgeContainer}>
           <GlassSurface
@@ -495,7 +515,7 @@ export default function GlassPreviewScreen() {
             noBlur={simulateReduceTransparency}
           >
             <Check size={16} color={palette.mint[300]} />
-            <Text style={styles.statusBadgeText}>M1 Glass UI Kit Verified & Ready</Text>
+            <Text style={styles.statusBadgeText}>M1 & M2 Complete: Glass UI Kit + Floating Nav</Text>
           </GlassSurface>
         </View>
       </ScrollView>
@@ -795,5 +815,11 @@ const styles = StyleSheet.create({
     fontFamily: typography.families.bold,
     fontSize: 13,
     color: palette.mint[300],
+  },
+  tabBarPreviewBox: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
   },
 });

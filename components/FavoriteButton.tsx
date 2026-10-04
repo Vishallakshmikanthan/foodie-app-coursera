@@ -30,8 +30,9 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={(e) => {
-        // Prevent event propagation if inside a card
-        e.stopPropagation?.();
+        if (e && typeof e.stopPropagation === 'function') {
+          e.stopPropagation();
+        }
         onPress();
       }}
       style={[

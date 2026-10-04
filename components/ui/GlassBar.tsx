@@ -4,6 +4,7 @@ import {
   ViewStyle,
   StyleProp,
   Platform,
+  ViewProps,
 } from 'react-native';
 import { GlassSurface, GlassVariant } from './GlassSurface';
 import { radii, shadows } from '../../theme/tokens';
@@ -18,7 +19,7 @@ export type GlassBarVariant =
 
 export type GlassBarSize = 'sm' | 'md' | 'lg' | 'auto';
 
-export interface GlassBarProps {
+export interface GlassBarProps extends ViewProps {
   children?: React.ReactNode;
   variant?: GlassBarVariant;
   size?: GlassBarSize;
@@ -48,6 +49,7 @@ export const GlassBar: React.FC<GlassBarProps> = ({
   hasShadow = true,
   noBlur = false,
   testID,
+  ...rest
 }) => {
   const isFloating = variant === 'floating';
   const surfaceVariant: GlassVariant = isFloating ? 'prominent' : variant;
@@ -104,6 +106,7 @@ export const GlassBar: React.FC<GlassBarProps> = ({
         contentContainerStyle,
       ]}
       testID={testID}
+      {...rest}
     >
       {children}
     </GlassSurface>

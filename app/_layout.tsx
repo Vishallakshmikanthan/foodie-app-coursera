@@ -17,6 +17,7 @@ import {
 } from '@expo-google-fonts/fraunces';
 import { RecipeProvider } from '../context/RecipeContext';
 import { ThemeProvider } from '../theme/ThemeProvider';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { palette } from '../theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -44,9 +45,10 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <RecipeProvider>
-          <StatusBar style="light" />
+      <ErrorBoundary>
+        <ThemeProvider>
+          <RecipeProvider>
+            <StatusBar style="light" />
           <Stack
             screenOptions={{
               headerShown: false,
@@ -54,16 +56,15 @@ export default function RootLayout() {
               animation: 'slide_from_right',
             }}
           >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="favorites" />
-            <Stack.Screen name="my-food" />
-            <Stack.Screen name="add-recipe" />
-            <Stack.Screen name="edit-recipe" />
-            <Stack.Screen name="recipe/[id]" />
-            <Stack.Screen name="glass-preview" />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="add-recipe" options={{ headerShown: false }} />
+            <Stack.Screen name="edit-recipe" options={{ headerShown: false }} />
+            <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="glass-preview" options={{ headerShown: false }} />
           </Stack>
         </RecipeProvider>
       </ThemeProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

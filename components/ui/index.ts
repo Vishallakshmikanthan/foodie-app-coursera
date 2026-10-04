@@ -39,3 +39,11 @@ export type {
   GradientBackgroundProps,
   GradientPreset,
 } from './GradientBackground';
+
+export {
+  FloatingTabBar,
+} from '../FloatingTabBar';
+export type {
+  FloatingTabBarProps,
+} from '../FloatingTabBar';
+

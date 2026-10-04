@@ -12,20 +12,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Search,
   X,
-  Heart,
-  ChefHat,
+  Plus,
   CookingPot,
   Sparkles,
 } from 'lucide-react-native';
-import { GlassIconButton } from '../components/ui';
-import { useRecipes } from '../context/RecipeContext';
-import { CategoryBar } from '../components/CategoryBar';
-import { RecipeCard } from '../components/RecipeCard';
-import { EmptyState } from '../components/EmptyState';
-import { BottomNav } from '../components/BottomNav';
-import { useAppRouter } from '../utils/navigation';
-import { useTheme } from '../theme/ThemeProvider';
-import { palette, typography } from '../theme/tokens';
+import { GlassIconButton } from '../../components/ui';
+import { useRecipes } from '../../context/RecipeContext';
+import { CategoryBar } from '../../components/CategoryBar';
+import { RecipeCard } from '../../components/RecipeCard';
+import { EmptyState } from '../../components/EmptyState';
+import { useAppRouter } from '../../utils/navigation';
+import { useTheme } from '../../theme/ThemeProvider';
+import { palette, typography } from '../../theme/tokens';
 
 export default function HomeScreen() {
   const router = useAppRouter();
@@ -37,7 +35,6 @@ export default function HomeScreen() {
     searchQuery,
     setSearchQuery,
     toggleFavorite,
-    favoriteRecipes,
     isLoading,
   } = useRecipes();
 
@@ -79,46 +76,15 @@ export default function HomeScreen() {
 
             {/* Quick Header Actions */}
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={() => router.push('/favorites')}
-                activeOpacity={0.7}
-                style={[
-                  styles.headerIconButton,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
-                    borderColor: colors.borderSubtle,
-                  },
-                ]}
-                accessibilityLabel="Go to Favorites"
-              >
-                <Heart
-                  size={20}
-                  color={colors.favoriteActive}
-                  fill={favoriteRecipes.length > 0 ? colors.favoriteActive : palette.transparent}
-                />
-                {favoriteRecipes.length > 0 && (
-                  <View style={[styles.headerBadge, { backgroundColor: colors.error }]}>
-                    <Text style={styles.headerBadgeText}>
-                      {favoriteRecipes.length > 99 ? '99+' : favoriteRecipes.length}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => router.push('/my-food')}
-                activeOpacity={0.7}
-                style={[
-                  styles.headerIconButton,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
-                    borderColor: colors.borderSubtle,
-                  },
-                ]}
-                accessibilityLabel="Go to My Food"
-              >
-                <ChefHat size={20} color={colors.primary} />
-              </TouchableOpacity>
+              <GlassIconButton
+                icon={Plus}
+                size={38}
+                iconSize={18}
+                variant="peach"
+                onPress={() => router.push('/add-recipe')}
+                accessibilityLabel="Quick Add Recipe"
+                accessibilityHint="Create a new custom recipe"
+              />
 
               <GlassIconButton
                 icon={Sparkles}
@@ -218,9 +184,6 @@ export default function HomeScreen() {
             }
           />
         )}
-
-        {/* Persistent Bottom Navigation */}
-        <BottomNav />
       </View>
     </SafeAreaView>
   );
@@ -249,70 +212,47 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 4,
   },
   brandTextContainer: {
     flex: 1,
+    marginLeft: 12,
   },
   brandName: {
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: typography.families.bold,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   greetingText: {
     fontSize: 12,
     fontFamily: typography.families.medium,
+    marginTop: 1,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  headerIconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    borderWidth: 1,
-  },
-  headerBadge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  headerBadgeText: {
-    color: palette.white,
-    fontSize: 9,
-    fontFamily: typography.families.bold,
-  },
   welcomeTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: typography.families.bold,
-    marginVertical: 6,
+    marginTop: 2,
+    marginBottom: 10,
+    lineHeight: 22,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 6,
     borderWidth: 1,
+    paddingHorizontal: 14,
+    height: 44,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
@@ -337,7 +277,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 110,
   },
   loadingContainer: {
     flex: 1,

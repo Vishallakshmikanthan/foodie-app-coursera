@@ -7,24 +7,26 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Heart } from 'lucide-react-native';
-import { useRecipes } from '../context/RecipeContext';
-import { RecipeCard } from '../components/RecipeCard';
-import { EmptyState } from '../components/EmptyState';
-import { BottomNav } from '../components/BottomNav';
-import { useAppRouter } from '../utils/navigation';
-import { useTheme } from '../theme/ThemeProvider';
-import { palette, typography } from '../theme/tokens';
+import { ArrowLeft, Heart, Plus } from 'lucide-react-native';
+import { GlassIconButton } from '../../components/ui';
+import { useRecipes } from '../../context/RecipeContext';
+import { RecipeCard } from '../../components/RecipeCard';
+import { EmptyState } from '../../components/EmptyState';
+import { useAppRouter } from '../../utils/navigation';
+import { useTheme } from '../../theme/ThemeProvider';
+import { palette, typography } from '../../theme/tokens';
 
 export default function FavoritesScreen() {
   const router = useAppRouter();
   const { colors, isDark } = useTheme();
   const { favoriteRecipes, toggleFavorite } = useRecipes();
 
+  const showBackButton = router.canGoBack();
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Header with Back Button */}
+        {/* Header */}
         <View
           style={[
             styles.header,
@@ -34,35 +36,39 @@ export default function FavoritesScreen() {
             },
           ]}
         >
-          <TouchableOpacity
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/');
-              }
-            }}
-            activeOpacity={0.7}
-            style={[
-              styles.backButton,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
-                borderColor: colors.borderSubtle,
-              },
-            ]}
-            accessibilityLabel="Go back"
-          >
-            <ArrowLeft size={22} color={colors.text} />
-          </TouchableOpacity>
+          {showBackButton && (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+              style={[
+                styles.backButton,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+              accessibilityLabel="Go back"
+            >
+              <ArrowLeft size={20} color={colors.text} />
+            </TouchableOpacity>
+          )}
 
-          <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Favorite Recipes</Text>
+          <View style={[styles.headerTitleContainer, !showBackButton && { paddingLeft: 4 }]}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Favorites</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
               {favoriteRecipes.length} saved {favoriteRecipes.length === 1 ? 'recipe' : 'recipes'}
             </Text>
           </View>
 
-          <View style={styles.headerRightPlaceholder} />
+          <GlassIconButton
+            icon={Plus}
+            size={38}
+            iconSize={18}
+            variant="peach"
+            onPress={() => router.push('/add-recipe')}
+            accessibilityLabel="Add New Recipe"
+            accessibilityHint="Create your own custom recipe"
+          />
         </View>
 
         {/* Favorite Recipes List */}
@@ -76,17 +82,20 @@ export default function FavoritesScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <EmptyState
-              icon={<Heart size={36} color={colors.favoriteActive} fill={isDark ? 'rgba(248, 113, 113, 0.2)' : palette.crimson[100]} />}
+              icon={
+                <Heart
+                  size={36}
+                  color={colors.favoriteActive}
+                  fill={isDark ? 'rgba(248, 113, 113, 0.2)' : palette.crimson[100]}
+                />
+              }
               title="No favorite recipes yet"
               description="Explore mouthwatering recipes from our collection and tap the heart icon on any card to save your favorites here!"
               actionText="Explore Recipes"
-              onAction={() => router.push('/')}
+              onAction={() => router.push('/explore')}
             />
           }
         />
-
-        {/* Bottom Navigation */}
-        <BottomNav />
       </View>
     </SafeAreaView>
   );
@@ -108,18 +117,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    marginRight: 10,
   },
   headerTitleContainer: {
-    alignItems: 'center',
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontFamily: typography.families.bold,
   },
   headerSubtitle: {
@@ -127,11 +137,9 @@ const styles = StyleSheet.create({
     fontFamily: typography.families.medium,
     marginTop: 2,
   },
-  headerRightPlaceholder: {
-    width: 40,
-  },
   listContent: {
-    padding: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 110,
   },
 });

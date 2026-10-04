@@ -12,20 +12,22 @@ import {
   Plus,
   ChefHat,
 } from 'lucide-react-native';
-import { useRecipes } from '../context/RecipeContext';
-import { RecipeCard } from '../components/RecipeCard';
-import { EmptyState } from '../components/EmptyState';
-import { BottomNav } from '../components/BottomNav';
-import { confirmAction } from '../utils/recipeUtils';
-import { Recipe } from '../types/recipe';
-import { useAppRouter } from '../utils/navigation';
-import { useTheme } from '../theme/ThemeProvider';
-import { palette, typography } from '../theme/tokens';
+import { GlassSurface } from '../../components/ui';
+import { useRecipes } from '../../context/RecipeContext';
+import { RecipeCard } from '../../components/RecipeCard';
+import { EmptyState } from '../../components/EmptyState';
+import { confirmAction } from '../../utils/recipeUtils';
+import { Recipe } from '../../types/recipe';
+import { useAppRouter } from '../../utils/navigation';
+import { useTheme } from '../../theme/ThemeProvider';
+import { palette, typography } from '../../theme/tokens';
 
 export default function MyFoodScreen() {
   const router = useAppRouter();
   const { colors, isDark } = useTheme();
   const { userRecipes, toggleFavorite, deleteRecipe } = useRecipes();
+
+  const showBackButton = router.canGoBack();
 
   const handleEdit = (recipe: Recipe) => {
     router.push({
@@ -59,35 +61,42 @@ export default function MyFoodScreen() {
             },
           ]}
         >
-          <TouchableOpacity
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/');
-              }
-            }}
-            activeOpacity={0.7}
-            style={[
-              styles.backButton,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
-                borderColor: colors.borderSubtle,
-              },
-            ]}
-            accessibilityLabel="Go back"
-          >
-            <ArrowLeft size={22} color={colors.text} />
-          </TouchableOpacity>
+          {showBackButton && (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+              style={[
+                styles.backButton,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+              accessibilityLabel="Go back"
+            >
+              <ArrowLeft size={20} color={colors.text} />
+            </TouchableOpacity>
+          )}
 
-          <View style={styles.headerTitleContainer}>
+          <View style={[styles.headerTitleContainer, !showBackButton && { paddingLeft: 4 }]}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>My Food</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
               Personal Recipe Management
             </Text>
           </View>
 
-          <View style={styles.headerRightPlaceholder} />
+          <View style={styles.headerRightAction}>
+            <View
+              style={[
+                styles.counterBadge,
+                { backgroundColor: colors.chipBackground },
+              ]}
+            >
+              <Text style={[styles.counterBadgeText, { color: colors.textSecondary }]}>
+                {userRecipes.length} {userRecipes.length === 1 ? 'recipe' : 'recipes'}
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* FlatList with Add New Recipe Card as ListHeaderComponent */}
@@ -107,7 +116,7 @@ export default function MyFoodScreen() {
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <View style={styles.listHeader}>
-              {/* + Add New Recipe Card */}
+              {/* + Add New Recipe Banner Card */}
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() => router.push('/add-recipe')}
@@ -155,16 +164,6 @@ export default function MyFoodScreen() {
                   <ChefHat size={20} color={colors.primary} />
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>My Recipes</Text>
                 </View>
-                <View
-                  style={[
-                    styles.counterBadge,
-                    { backgroundColor: colors.chipBackground },
-                  ]}
-                >
-                  <Text style={[styles.counterBadgeText, { color: colors.textSecondary }]}>
-                    {userRecipes.length} {userRecipes.length === 1 ? 'recipe' : 'recipes'}
-                  </Text>
-                </View>
               </View>
             </View>
           }
@@ -179,8 +178,24 @@ export default function MyFoodScreen() {
           }
         />
 
-        {/* Bottom Navigation */}
-        <BottomNav />
+        {/* Floating Glass '+' FAB Button (Per M2 specification) */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.push('/add-recipe')}
+          style={styles.floatingFabWrapper}
+          accessibilityRole="button"
+          accessibilityLabel="Add Recipe Floating Button"
+        >
+          <GlassSurface
+            variant="coral"
+            intensity={50}
+            borderRadius={28}
+            borderWidth={1.5}
+            style={styles.floatingFab}
+          >
+            <Plus size={24} color={palette.white} strokeWidth={2.8} />
+          </GlassSurface>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -192,6 +207,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',
@@ -202,18 +218,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    marginRight: 10,
   },
   headerTitleContainer: {
-    alignItems: 'center',
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontFamily: typography.families.bold,
   },
   headerSubtitle: {
@@ -221,12 +238,12 @@ const styles = StyleSheet.create({
     fontFamily: typography.families.medium,
     marginTop: 2,
   },
-  headerRightPlaceholder: {
-    width: 40,
+  headerRightAction: {
+    alignItems: 'flex-end',
   },
   listContent: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 130,
   },
   listHeader: {
     marginBottom: 16,
@@ -273,7 +290,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -292,5 +309,23 @@ const styles = StyleSheet.create({
   counterBadgeText: {
     fontSize: 12,
     fontFamily: typography.families.semiBold,
+  },
+  floatingFabWrapper: {
+    position: 'absolute',
+    right: 20,
+    bottom: 96,
+    zIndex: 99,
+  },
+  floatingFab: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: palette.coral[500],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });
