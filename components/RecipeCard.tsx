@@ -2,15 +2,17 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Clock, Flame, Users, Edit3, Trash2 } from 'lucide-react-native';
 import { Recipe } from '../types/recipe';
 import { FavoriteButton } from './FavoriteButton';
 import { getDifficultyColor } from '../utils/recipeUtils';
 import { useAppRouter } from '../utils/navigation';
+import { useTheme } from '../theme/ThemeProvider';
+import { palette, typography } from '../theme/tokens';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -28,7 +30,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   onDelete,
 }) => {
   const router = useAppRouter();
-  const diffColors = getDifficultyColor(recipe.difficulty);
+  const { colors, isDark } = useTheme();
+  const diffColors = getDifficultyColor(recipe.difficulty, isDark);
 
   const handleCardPress = () => {
     router.push(`/recipe/${recipe.id}`);
@@ -38,16 +41,29 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={handleCardPress}
-      style={styles.card}
+      style={[
+        styles.card,
+        {
+          backgroundColor: isDark ? colors.surface : colors.surface,
+          borderColor: colors.border,
+        },
+      ]}
       accessibilityRole="button"
       accessibilityLabel={`View recipe for ${recipe.name}`}
     >
       {/* Top Image Container */}
-      <View style={styles.imageContainer}>
+      <View
+        style={[
+          styles.imageContainer,
+          { backgroundColor: isDark ? palette.forest[800] : palette.gray[200] },
+        ]}
+      >
         <Image
           source={{ uri: recipe.image }}
           style={styles.image}
-          resizeMode="cover"
+          contentFit="cover"
+          transition={300}
+          cachePolicy="memory-disk"
         />
 
         {/* Category Badge */}
@@ -67,7 +83,13 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       {/* Content Container */}
       <View style={styles.content}>
         {/* Title */}
-        <Text style={styles.title} numberOfLines={2}>
+        <Text
+          style={[
+            styles.title,
+            { color: colors.text },
+          ]}
+          numberOfLines={2}
+        >
           {recipe.name}
         </Text>
 
@@ -75,8 +97,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         <View style={styles.metaRow}>
           {/* Prep Time */}
           <View style={styles.metaItem}>
-            <Clock size={14} color="#6B7280" />
-            <Text style={styles.metaText}>{recipe.preparationTime} mins</Text>
+            <Clock size={14} color={isDark ? colors.textSecondary : palette.gray[500]} />
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              {recipe.preparationTime} mins
+            </Text>
           </View>
 
           {/* Difficulty Badge */}
@@ -93,20 +117,29 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
           {/* Servings */}
           <View style={styles.metaItem}>
-            <Users size={14} color="#6B7280" />
-            <Text style={styles.metaText}>{recipe.servings} serv</Text>
+            <Users size={14} color={isDark ? colors.textSecondary : palette.gray[500]} />
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              {recipe.servings} serv
+            </Text>
           </View>
 
           {/* Calories */}
           <View style={styles.metaItem}>
-            <Flame size={14} color="#EF4444" />
-            <Text style={styles.metaText}>{recipe.calories} kcal</Text>
+            <Flame size={14} color={colors.accentSaffron} />
+            <Text style={[styles.metaText, { color: colors.accentSaffron }]}>
+              {recipe.calories} kcal
+            </Text>
           </View>
         </View>
 
         {/* Manage Action Buttons for My Recipes */}
         {showManageActions && (
-          <View style={styles.actionsRow}>
+          <View
+            style={[
+              styles.actionsRow,
+              { borderTopColor: colors.borderSubtle },
+            ]}
+          >
             {onEdit && (
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -114,10 +147,16 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                   e.stopPropagation?.();
                   onEdit(recipe);
                 }}
-                style={[styles.actionBtn, styles.editBtn]}
+                style={[
+                  styles.actionBtn,
+                  {
+                    backgroundColor: colors.editButtonBg,
+                    borderColor: colors.editButtonBorder,
+                  },
+                ]}
               >
-                <Edit3 size={15} color="#2563EB" />
-                <Text style={styles.editBtnText}>Edit</Text>
+                <Edit3 size={15} color={colors.editButton} />
+                <Text style={[styles.editBtnText, { color: colors.editButton }]}>Edit</Text>
               </TouchableOpacity>
             )}
 
@@ -128,10 +167,16 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                   e.stopPropagation?.();
                   onDelete(recipe.id);
                 }}
-                style={[styles.actionBtn, styles.deleteBtn]}
+                style={[
+                  styles.actionBtn,
+                  {
+                    backgroundColor: colors.deleteButtonBg,
+                    borderColor: colors.deleteButtonBorder,
+                  },
+                ]}
               >
-                <Trash2 size={15} color="#DC2626" />
-                <Text style={styles.deleteBtnText}>Delete</Text>
+                <Trash2 size={15} color={colors.deleteButton} />
+                <Text style={[styles.deleteBtnText, { color: colors.deleteButton }]}>Delete</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -143,23 +188,20 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    shadowColor: palette.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
   imageContainer: {
     width: '100%',
     height: 180,
     position: 'relative',
-    backgroundColor: '#E5E7EB',
   },
   image: {
     width: '100%',
@@ -169,15 +211,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: 'rgba(17, 24, 39, 0.75)',
+    backgroundColor: 'rgba(14, 26, 23, 0.75)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   categoryBadgeText: {
-    color: '#FFFFFF',
+    color: palette.white,
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     letterSpacing: 0.3,
   },
   favoriteButtonWrapper: {
@@ -190,8 +234,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 17,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
     marginBottom: 10,
     lineHeight: 22,
   },
@@ -209,8 +252,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
   difficultyBadge: {
     paddingHorizontal: 8,
@@ -220,14 +262,13 @@ const styles = StyleSheet.create({
   },
   difficultyText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
   actionsRow: {
     flexDirection: 'row',
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
     gap: 10,
   },
   actionBtn: {
@@ -236,27 +277,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
+    borderWidth: 1,
     gap: 6,
   },
-  editBtn: {
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
   editBtnText: {
-    color: '#2563EB',
-    fontWeight: '600',
+    fontFamily: typography.families.semiBold,
     fontSize: 13,
   },
-  deleteBtn: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
   deleteBtnText: {
-    color: '#DC2626',
-    fontWeight: '600',
+    fontFamily: typography.families.semiBold,
     fontSize: 13,
   },
 });

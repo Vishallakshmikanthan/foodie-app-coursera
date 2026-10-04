@@ -13,16 +13,27 @@ import { RecipeCard } from '../components/RecipeCard';
 import { EmptyState } from '../components/EmptyState';
 import { BottomNav } from '../components/BottomNav';
 import { useAppRouter } from '../utils/navigation';
+import { useTheme } from '../theme/ThemeProvider';
+import { palette, typography } from '../theme/tokens';
 
 export default function FavoritesScreen() {
   const router = useAppRouter();
+  const { colors, isDark } = useTheme();
   const { favoriteRecipes, toggleFavorite } = useRecipes();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header with Back Button */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.background,
+              borderBottomColor: colors.borderSubtle,
+            },
+          ]}
+        >
           <TouchableOpacity
             onPress={() => {
               if (router.canGoBack()) {
@@ -32,15 +43,21 @@ export default function FavoritesScreen() {
               }
             }}
             activeOpacity={0.7}
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
+                borderColor: colors.borderSubtle,
+              },
+            ]}
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={22} color="#1F2937" />
+            <ArrowLeft size={22} color={colors.text} />
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Favorite Recipes</Text>
-            <Text style={styles.headerSubtitle}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Favorite Recipes</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
               {favoriteRecipes.length} saved {favoriteRecipes.length === 1 ? 'recipe' : 'recipes'}
             </Text>
           </View>
@@ -59,7 +76,7 @@ export default function FavoritesScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <EmptyState
-              icon={<Heart size={36} color="#E53935" fill="#FEE2E2" />}
+              icon={<Heart size={36} color={colors.favoriteActive} fill={isDark ? 'rgba(248, 113, 113, 0.2)' : palette.crimson[100]} />}
               title="No favorite recipes yet"
               description="Explore mouthwatering recipes from our collection and tap the heart icon on any card to save your favorites here!"
               actionText="Explore Recipes"
@@ -78,11 +95,9 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
@@ -90,30 +105,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   headerTitleContainer: {
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
     marginTop: 2,
   },
   headerRightPlaceholder: {

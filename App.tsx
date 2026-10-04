@@ -2,6 +2,7 @@ import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RecipeProvider } from './context/RecipeContext';
+import { ThemeProvider } from './theme/ThemeProvider';
 import { AppNavigationProvider, useAppPathname } from './utils/navigation';
 
 // Screen imports for Expo Snack compatibility
@@ -37,12 +38,14 @@ function SnackScreenRenderer() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <RecipeProvider>
-        <AppNavigationProvider>
-          <StatusBar style="dark" />
-          <SnackScreenRenderer />
-        </AppNavigationProvider>
-      </RecipeProvider>
+      <ThemeProvider>
+        <RecipeProvider>
+          <AppNavigationProvider>
+            <StatusBar style="light" />
+            <SnackScreenRenderer />
+          </AppNavigationProvider>
+        </RecipeProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

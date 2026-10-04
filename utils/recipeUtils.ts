@@ -1,5 +1,6 @@
 import { Alert, Platform } from 'react-native';
 import { DifficultyLevel, RecipeFormData } from '../types/recipe';
+import { palette, difficultyColors } from '../theme/tokens';
 
 export function validateRecipeForm(data: RecipeFormData): {
   isValid: boolean;
@@ -53,21 +54,16 @@ export function validateRecipeForm(data: RecipeFormData): {
   };
 }
 
-export function getDifficultyColor(difficulty: DifficultyLevel): {
+export function getDifficultyColor(
+  difficulty: DifficultyLevel,
+  isDark: boolean = true
+): {
   bg: string;
   text: string;
   border: string;
 } {
-  switch (difficulty) {
-    case 'Easy':
-      return { bg: '#E8F5E9', text: '#2E7D32', border: '#C8E6C9' };
-    case 'Medium':
-      return { bg: '#FFF3E0', text: '#E65100', border: '#FFE0B2' };
-    case 'Hard':
-      return { bg: '#FFEBEE', text: '#C62828', border: '#FFCDD2' };
-    default:
-      return { bg: '#F5F5F5', text: '#616161', border: '#E0E0E0' };
-  }
+  const scheme = isDark ? difficultyColors.dark : difficultyColors.light;
+  return scheme[difficulty] || scheme.default;
 }
 
 export function confirmAction({

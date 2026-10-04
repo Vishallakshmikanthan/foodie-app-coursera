@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  Image,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
@@ -24,10 +24,13 @@ import { useRecipes } from '../../context/RecipeContext';
 import { FavoriteButton } from '../../components/FavoriteButton';
 import { getDifficultyColor, confirmAction } from '../../utils/recipeUtils';
 import { useAppRouter, useAppParams } from '../../utils/navigation';
+import { useTheme } from '../../theme/ThemeProvider';
+import { palette, typography } from '../../theme/tokens';
 
 export default function RecipeDetailScreen() {
   const router = useAppRouter();
   const { id } = useAppParams<{ id: string }>();
+  const { colors, isDark } = useTheme();
   const { getRecipeById, toggleFavorite, deleteRecipe, isLoading } = useRecipes();
 
   // State to track checked ingredients as user cooks
@@ -70,10 +73,12 @@ export default function RecipeDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#FF6B35" />
-          <Text style={styles.loadingText}>Loading recipe details...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading recipe details...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -81,10 +86,10 @@ export default function RecipeDetailScreen() {
 
   if (!recipe) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
-          <Text style={styles.errorTitle}>Recipe Not Found</Text>
-          <Text style={styles.errorText}>
+          <Text style={[styles.errorTitle, { color: colors.error }]}>Recipe Not Found</Text>
+          <Text style={[styles.errorText, { color: colors.textSecondary }]}>
             We could not find the recipe you were looking for. It may have been deleted.
           </Text>
           <TouchableOpacity
@@ -95,7 +100,7 @@ export default function RecipeDetailScreen() {
                 router.replace('/');
               }
             }}
-            style={styles.backHomeBtn}
+            style={[styles.backHomeBtn, { backgroundColor: colors.primary }]}
           >
             <Text style={styles.backHomeBtnText}>← Return to Home</Text>
           </TouchableOpacity>
@@ -104,13 +109,21 @@ export default function RecipeDetailScreen() {
     );
   }
 
-  const diffColors = getDifficultyColor(recipe.difficulty);
+  const diffColors = getDifficultyColor(recipe.difficulty, isDark);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Fixed Navigation Header with Back and Favorite */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.background,
+              borderBottomColor: colors.borderSubtle,
+            },
+          ]}
+        >
           <TouchableOpacity
             onPress={() => {
               if (router.canGoBack()) {
@@ -120,13 +133,19 @@ export default function RecipeDetailScreen() {
               }
             }}
             activeOpacity={0.7}
-            style={styles.headerIconBtn}
+            style={[
+              styles.headerIconBtn,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F3F4F6',
+                borderColor: colors.borderSubtle,
+              },
+            ]}
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={22} color="#1F2937" />
+            <ArrowLeft size={22} color={colors.text} />
           </TouchableOpacity>
 
-          <Text style={styles.headerCenterTitle} numberOfLines={1}>
+          <Text style={[styles.headerCenterTitle, { color: colors.text }]} numberOfLines={1}>
             {recipe.name}
           </Text>
 
@@ -136,19 +155,31 @@ export default function RecipeDetailScreen() {
                 <TouchableOpacity
                   onPress={handleEdit}
                   activeOpacity={0.7}
-                  style={styles.headerIconBtn}
+                  style={[
+                    styles.headerIconBtn,
+                    {
+                      backgroundColor: colors.editButtonBg,
+                      borderColor: colors.editButtonBorder,
+                    },
+                  ]}
                   accessibilityLabel="Edit recipe"
                 >
-                  <Edit3 size={18} color="#2563EB" />
+                  <Edit3 size={18} color={colors.editButton} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={handleDelete}
                   activeOpacity={0.7}
-                  style={styles.headerIconBtn}
+                  style={[
+                    styles.headerIconBtn,
+                    {
+                      backgroundColor: colors.deleteButtonBg,
+                      borderColor: colors.deleteButtonBorder,
+                    },
+                  ]}
                   accessibilityLabel="Delete recipe"
                 >
-                  <Trash2 size={18} color="#DC2626" />
+                  <Trash2 size={18} color={colors.deleteButton} />
                 </TouchableOpacity>
               </>
             )}
@@ -157,7 +188,7 @@ export default function RecipeDetailScreen() {
             <FavoriteButton
               isFavorite={recipe.isFavorite}
               onPress={() => toggleFavorite(recipe.id)}
-              size={22}
+              size={20}
             />
           </View>
         </View>
@@ -169,11 +200,18 @@ export default function RecipeDetailScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Large Hero Image Container */}
-          <View style={styles.heroImageContainer}>
+          <View
+            style={[
+              styles.heroImageContainer,
+              { backgroundColor: isDark ? palette.forest[800] : palette.gray[200] },
+            ]}
+          >
             <Image
               source={{ uri: recipe.image }}
               style={styles.heroImage}
-              resizeMode="cover"
+              contentFit="cover"
+              transition={300}
+              cachePolicy="memory-disk"
             />
             {/* Category Overlay Tag */}
             <View style={styles.categoryTag}>
@@ -181,38 +219,76 @@ export default function RecipeDetailScreen() {
             </View>
 
             {recipe.isUserCreated && (
-              <View style={styles.userCreatedTag}>
-                <ChefHat size={12} color="#FFFFFF" />
+              <View style={[styles.userCreatedTag, { backgroundColor: colors.primary }]}>
+                <ChefHat size={12} color={palette.white} />
                 <Text style={styles.userCreatedTagText}>Created by You</Text>
               </View>
             )}
           </View>
 
           {/* Recipe Title & Meta Info */}
-          <View style={styles.titleSection}>
-            <Text style={styles.recipeTitle}>{recipe.name}</Text>
+          <View
+            style={[
+              styles.titleSection,
+              {
+                backgroundColor: colors.surface,
+                borderBottomColor: colors.borderSubtle,
+              },
+            ]}
+          >
+            <Text style={[styles.recipeTitle, { color: colors.text }]}>{recipe.name}</Text>
 
             {/* Key Stats Metric Cards */}
             <View style={styles.metricsGrid}>
               {/* Preparation Time */}
-              <View style={styles.metricCard}>
-                <Clock size={20} color="#FF6B35" />
-                <Text style={styles.metricValue}>{recipe.preparationTime} mins</Text>
-                <Text style={styles.metricLabel}>Prep Time</Text>
+              <View
+                style={[
+                  styles.metricCard,
+                  {
+                    backgroundColor: isDark ? colors.backgroundSecondary : palette.gray[50],
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
+              >
+                <Clock size={20} color={colors.primary} />
+                <Text style={[styles.metricValue, { color: colors.text }]}>
+                  {recipe.preparationTime} mins
+                </Text>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Prep Time</Text>
               </View>
 
               {/* Servings */}
-              <View style={styles.metricCard}>
-                <Users size={20} color="#FF6B35" />
-                <Text style={styles.metricValue}>{recipe.servings} people</Text>
-                <Text style={styles.metricLabel}>Servings</Text>
+              <View
+                style={[
+                  styles.metricCard,
+                  {
+                    backgroundColor: isDark ? colors.backgroundSecondary : palette.gray[50],
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
+              >
+                <Users size={20} color={colors.primary} />
+                <Text style={[styles.metricValue, { color: colors.text }]}>
+                  {recipe.servings} people
+                </Text>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Servings</Text>
               </View>
 
               {/* Calories */}
-              <View style={styles.metricCard}>
-                <Flame size={20} color="#EF4444" />
-                <Text style={styles.metricValue}>{recipe.calories} kcal</Text>
-                <Text style={styles.metricLabel}>Calories</Text>
+              <View
+                style={[
+                  styles.metricCard,
+                  {
+                    backgroundColor: isDark ? colors.backgroundSecondary : palette.gray[50],
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
+              >
+                <Flame size={20} color={colors.accentSaffron} />
+                <Text style={[styles.metricValue, { color: colors.accentSaffron }]}>
+                  {recipe.calories} kcal
+                </Text>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Calories</Text>
               </View>
 
               {/* Difficulty Level */}
@@ -225,18 +301,37 @@ export default function RecipeDetailScreen() {
                 <Text style={[styles.diffLevelText, { color: diffColors.text }]}>
                   {recipe.difficulty}
                 </Text>
-                <Text style={styles.metricLabel}>Difficulty</Text>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Difficulty</Text>
               </View>
             </View>
           </View>
 
           {/* Ingredients Section */}
-          <View style={styles.cardSection}>
+          <View
+            style={[
+              styles.cardSection,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionHeading}>Ingredients</Text>
-              <Text style={styles.badgeCount}>{recipe.ingredients.length} items</Text>
+              <Text style={[styles.sectionHeading, { color: colors.text }]}>Ingredients</Text>
+              <Text
+                style={[
+                  styles.badgeCount,
+                  {
+                    backgroundColor: colors.chipBackground,
+                    color: colors.primary,
+                    borderColor: colors.chipBorder,
+                  },
+                ]}
+              >
+                {recipe.ingredients.length} items
+              </Text>
             </View>
-            <Text style={styles.sectionSubtitle}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
               Tap an ingredient to check it off while cooking:
             </Text>
 
@@ -250,18 +345,29 @@ export default function RecipeDetailScreen() {
                     onPress={() => toggleCheckIngredient(index)}
                     style={[
                       styles.ingredientItem,
-                      isChecked && styles.ingredientItemChecked,
+                      {
+                        backgroundColor: isChecked
+                          ? colors.successBg
+                          : isDark
+                          ? colors.backgroundSecondary
+                          : palette.gray[50],
+                        borderColor: isChecked ? colors.successBorder : colors.borderSubtle,
+                      },
                     ]}
                   >
                     {isChecked ? (
-                      <CheckCircle2 size={20} color="#16A34A" />
+                      <CheckCircle2 size={20} color={colors.success} />
                     ) : (
-                      <Circle size={20} color="#9CA3AF" />
+                      <Circle size={20} color={colors.textMuted} />
                     )}
                     <Text
                       style={[
                         styles.ingredientText,
-                        isChecked && styles.ingredientTextChecked,
+                        { color: colors.text },
+                        isChecked && [
+                          styles.ingredientTextChecked,
+                          { color: colors.textMuted },
+                        ],
                       ]}
                     >
                       {ingredient}
@@ -273,21 +379,51 @@ export default function RecipeDetailScreen() {
           </View>
 
           {/* Step-by-Step Instructions Section */}
-          <View style={styles.cardSection}>
+          <View
+            style={[
+              styles.cardSection,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionHeading}>Step-by-Step Instructions</Text>
-              <Text style={styles.badgeCount}>{recipe.instructions.length} steps</Text>
+              <Text style={[styles.sectionHeading, { color: colors.text }]}>
+                Step-by-Step Instructions
+              </Text>
+              <Text
+                style={[
+                  styles.badgeCount,
+                  {
+                    backgroundColor: colors.chipBackground,
+                    color: colors.primary,
+                    borderColor: colors.chipBorder,
+                  },
+                ]}
+              >
+                {recipe.instructions.length} steps
+              </Text>
             </View>
 
             <View style={styles.instructionsList}>
               {recipe.instructions.map((step, index) => (
-                <View key={index} style={styles.stepCard}>
-                  <View style={styles.stepNumberBadge}>
+                <View
+                  key={index}
+                  style={[
+                    styles.stepCard,
+                    {
+                      backgroundColor: isDark ? colors.backgroundSecondary : palette.gray[50],
+                      borderColor: colors.borderSubtle,
+                    },
+                  ]}
+                >
+                  <View style={[styles.stepNumberBadge, { backgroundColor: colors.primary }]}>
                     <Text style={styles.stepNumberText}>{index + 1}</Text>
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={styles.stepLabel}>Step {index + 1}</Text>
-                    <Text style={styles.stepText}>{step}</Text>
+                    <Text style={[styles.stepLabel, { color: colors.primary }]}>Step {index + 1}</Text>
+                    <Text style={[styles.stepText, { color: colors.text }]}>{step}</Text>
                   </View>
                 </View>
               ))}
@@ -296,24 +432,40 @@ export default function RecipeDetailScreen() {
 
           {/* If user created, action buttons */}
           {recipe.isUserCreated && (
-            <View style={styles.userActionsCard}>
-              <Text style={styles.userActionsTitle}>Manage Your Recipe</Text>
+            <View
+              style={[
+                styles.userActionsCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.userActionsTitle, { color: colors.text }]}>
+                Manage Your Recipe
+              </Text>
               <View style={styles.userActionsRow}>
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={handleEdit}
-                  style={styles.editActionBtn}
+                  style={[
+                    styles.editActionBtn,
+                    { backgroundColor: colors.editButton },
+                  ]}
                 >
-                  <Edit3 size={18} color="#FFFFFF" />
+                  <Edit3 size={18} color={palette.white} />
                   <Text style={styles.editActionBtnText}>Edit Recipe</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={handleDelete}
-                  style={styles.deleteActionBtn}
+                  style={[
+                    styles.deleteActionBtn,
+                    { backgroundColor: colors.deleteButton },
+                  ]}
                 >
-                  <Trash2 size={18} color="#FFFFFF" />
+                  <Trash2 size={18} color={palette.white} />
                   <Text style={styles.deleteActionBtnText}>Delete Recipe</Text>
                 </TouchableOpacity>
               </View>
@@ -328,11 +480,9 @@ export default function RecipeDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
@@ -340,22 +490,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   headerIconBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   headerCenterTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
     flex: 1,
     textAlign: 'center',
     paddingHorizontal: 10,
@@ -375,7 +522,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 270,
     position: 'relative',
-    backgroundColor: '#E5E7EB',
   },
   heroImage: {
     width: '100%',
@@ -385,14 +531,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 16,
     left: 16,
-    backgroundColor: 'rgba(17, 24, 39, 0.85)',
+    backgroundColor: 'rgba(14, 26, 23, 0.82)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   categoryTagText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: palette.white,
+    fontFamily: typography.families.bold,
     fontSize: 13,
   },
   userCreatedTag: {
@@ -402,27 +550,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#FF6B35',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
   },
   userCreatedTagText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: palette.white,
+    fontFamily: typography.families.bold,
     fontSize: 12,
   },
   titleSection: {
-    backgroundColor: '#FFFFFF',
     padding: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   recipeTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111827',
-    lineHeight: 28,
+    fontSize: 24,
+    fontFamily: typography.families.display,
+    lineHeight: 30,
     marginBottom: 16,
   },
   metricsGrid: {
@@ -431,46 +575,40 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   metricValue: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
     marginTop: 4,
     marginBottom: 2,
     textAlign: 'center',
   },
   metricLabel: {
     fontSize: 11,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
   diffLevelText: {
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: typography.families.extraBold,
     marginTop: 4,
     marginBottom: 2,
   },
   cardSection: {
-    backgroundColor: '#FFFFFF',
-    marginTop: 12,
+    marginTop: 14,
     padding: 18,
-    borderRadius: 16,
-    marginHorizontal: 12,
+    borderRadius: 18,
+    marginHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     elevation: 2,
   },
   sectionHeader: {
@@ -481,24 +619,20 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
+    fontFamily: typography.families.bold,
   },
   sectionSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
+    fontFamily: typography.families.regular,
     marginBottom: 12,
   },
   badgeCount: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#FF6B35',
-    backgroundColor: '#FFF7ED',
+    fontFamily: typography.families.semiBold,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#FFEDD5',
   },
   ingredientsList: {
     gap: 8,
@@ -508,25 +642,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     gap: 12,
-  },
-  ingredientItemChecked: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
   },
   ingredientText: {
     fontSize: 14,
-    color: '#1F2937',
     flex: 1,
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
   ingredientTextChecked: {
     textDecorationLine: 'line-through',
-    color: '#6B7280',
   },
   instructionsList: {
     gap: 12,
@@ -534,25 +660,22 @@ const styles = StyleSheet.create({
   },
   stepCard: {
     flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     gap: 12,
   },
   stepNumberBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#FF6B35',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
   stepNumberText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    color: palette.white,
+    fontFamily: typography.families.extraBold,
     fontSize: 13,
   },
   stepContent: {
@@ -560,28 +683,24 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#FF6B35',
+    fontFamily: typography.families.bold,
     marginBottom: 4,
   },
   stepText: {
     fontSize: 14,
-    color: '#374151',
+    fontFamily: typography.families.regular,
     lineHeight: 21,
   },
   userActionsCard: {
-    marginHorizontal: 12,
+    marginHorizontal: 14,
     marginTop: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   userActionsTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -594,14 +713,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2563EB',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     gap: 6,
   },
   editActionBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: palette.white,
+    fontFamily: typography.families.bold,
     fontSize: 14,
   },
   deleteActionBtn: {
@@ -609,14 +727,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DC2626',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     gap: 6,
   },
   deleteActionBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: palette.white,
+    fontFamily: typography.families.bold,
     fontSize: 14,
   },
   centerContainer: {
@@ -628,30 +745,28 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
+    fontFamily: typography.families.medium,
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#EF4444',
+    fontFamily: typography.families.bold,
     marginBottom: 8,
   },
   errorText: {
     fontSize: 14,
-    color: '#6B7280',
+    fontFamily: typography.families.regular,
     textAlign: 'center',
     marginBottom: 20,
     lineHeight: 20,
   },
   backHomeBtn: {
-    backgroundColor: '#FF6B35',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 20,
   },
   backHomeBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: palette.white,
+    fontFamily: typography.families.bold,
     fontSize: 14,
   },
 });

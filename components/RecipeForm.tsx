@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Image,
   Alert,
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import {
   Camera,
@@ -20,11 +20,12 @@ import {
   Users,
   Flame,
   Check,
-  Sparkles,
 } from 'lucide-react-native';
 import { DifficultyLevel, RecipeFormData } from '../types/recipe';
 import { RECIPE_CATEGORIES, DEFAULT_RECIPE_IMAGE } from '../data/recipes';
 import { validateRecipeForm } from '../utils/recipeUtils';
+import { useTheme } from '../theme/ThemeProvider';
+import { palette, typography } from '../theme/tokens';
 
 interface RecipeFormProps {
   initialData?: RecipeFormData;
@@ -58,6 +59,8 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
   submitButtonText,
   isSubmitting = false,
 }) => {
+  const { colors, isDark } = useTheme();
+
   const [name, setName] = useState(initialData?.name || '');
   const [image, setImage] = useState(initialData?.image || DEFAULT_RECIPE_IMAGE);
   const [category, setCategory] = useState(initialData?.category || RECIPE_CATEGORIES[0]);
@@ -174,7 +177,6 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
 
   // Handle Form Submission
   const handleSubmit = async () => {
-    // Include pending input if user typed but didn't press add
     let finalIngredients = [...ingredients];
     if (newIngredientInput.trim()) {
       finalIngredients.push(newIngredientInput.trim());
@@ -212,14 +214,14 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
       keyboardShouldPersistTaps="handled"
     >
       {/* 1. Recipe Name */}
-      <View style={styles.section}>
-        <Text style={styles.label}>
-          Recipe Name <Text style={styles.required}>*</Text>
+      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[styles.label, { color: colors.text }]}>
+          Recipe Name <Text style={[styles.required, { color: colors.error }]}>*</Text>
         </Text>
         <TextInput
           value={name}
@@ -228,17 +230,30 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
             if (errors.name) setErrors((prev) => ({ ...prev, name: '' }));
           }}
           placeholder="e.g. Creamy Mushroom Fettuccine"
-          placeholderTextColor="#9CA3AF"
-          style={[styles.input, errors.name ? styles.inputError : null]}
+          placeholderTextColor={colors.textMuted}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.inputBackground,
+              borderColor: errors.name ? colors.error : colors.inputBorder,
+              color: colors.text,
+            },
+          ]}
         />
-        {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
+        {errors.name ? <Text style={[styles.errorText, { color: colors.error }]}>{errors.name}</Text> : null}
       </View>
 
       {/* 2. Recipe Image */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Recipe Photo</Text>
-        <View style={styles.imagePreviewContainer}>
-          <Image source={{ uri: image }} style={styles.imagePreview} resizeMode="cover" />
+      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[styles.label, { color: colors.text }]}>Recipe Photo</Text>
+        <View style={[styles.imagePreviewContainer, { backgroundColor: colors.backgroundElevated }]}>
+          <Image
+            source={{ uri: image }}
+            style={styles.imagePreview}
+            contentFit="cover"
+            transition={300}
+            cachePolicy="memory-disk"
+          />
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={handlePickImage}
@@ -246,10 +261,10 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
             disabled={isPickingImage}
           >
             {isPickingImage ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={palette.white} size="small" />
             ) : (
               <>
-                <Camera size={18} color="#FFFFFF" />
+                <Camera size={18} color={palette.white} />
                 <Text style={styles.pickImageButtonText}>Choose from Gallery</Text>
               </>
             )}
@@ -257,7 +272,7 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
         </View>
 
         {/* Preset quick image selection */}
-        <Text style={styles.subLabel}>Or select a preset photo:</Text>
+        <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Or select a preset photo:</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetRow}>
           {PRESET_IMAGES.map((preset, index) => (
             <TouchableOpacity
@@ -266,11 +281,24 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
               activeOpacity={0.7}
               style={[
                 styles.presetItem,
-                image === preset.url && styles.presetItemSelected,
+                image === preset.url && { borderColor: colors.primary },
               ]}
             >
-              <Image source={{ uri: preset.url }} style={styles.presetThumb} />
-              <Text style={styles.presetLabel} numberOfLines={1}>
+              <Image
+                source={{ uri: preset.url }}
+                style={styles.presetThumb}
+                contentFit="cover"
+                transition={300}
+                cachePolicy="memory-disk"
+              />
+              <Text
+                style={[
+                  styles.presetLabel,
+                  { color: colors.textSecondary },
+                  image === preset.url && { color: colors.primary, fontFamily: typography.families.bold },
+                ]}
+                numberOfLines={1}
+              >
                 {preset.label}
               </Text>
             </TouchableOpacity>
@@ -279,9 +307,9 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
       </View>
 
       {/* 3. Category Selector */}
-      <View style={styles.section}>
-        <Text style={styles.label}>
-          Category <Text style={styles.required}>*</Text>
+      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[styles.label, { color: colors.text }]}>
+          Category <Text style={[styles.required, { color: colors.error }]}>*</Text>
         </Text>
         <View style={styles.chipsContainer}>
           {RECIPE_CATEGORIES.map((cat) => {
@@ -291,12 +319,21 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
                 key={cat}
                 onPress={() => setCategory(cat)}
                 activeOpacity={0.7}
-                style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
+                style={[
+                  styles.categoryChip,
+                  {
+                    backgroundColor: isSelected ? colors.primary : colors.chipBackground,
+                    borderColor: isSelected ? colors.primary : colors.chipBorder,
+                  },
+                ]}
               >
                 <Text
                   style={[
                     styles.categoryChipText,
-                    isSelected && styles.categoryChipTextSelected,
+                    {
+                      color: isSelected ? palette.white : colors.textSecondary,
+                      fontFamily: isSelected ? typography.families.bold : typography.families.medium,
+                    },
                   ]}
                 >
                   {cat}
@@ -308,9 +345,9 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
       </View>
 
       {/* 4. Difficulty Selector */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Difficulty Level</Text>
-        <View style={styles.segmentedContainer}>
+      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[styles.label, { color: colors.text }]}>Difficulty Level</Text>
+        <View style={[styles.segmentedContainer, { backgroundColor: colors.inputBackground }]}>
           {(['Easy', 'Medium', 'Hard'] as DifficultyLevel[]).map((level) => {
             const isSelected = difficulty === level;
             return (
@@ -320,13 +357,19 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
                 activeOpacity={0.8}
                 style={[
                   styles.segmentButton,
-                  isSelected && styles.segmentButtonSelected,
+                  isSelected && {
+                    backgroundColor: isDark ? colors.surfaceElevated : palette.white,
+                    shadowColor: palette.black,
+                  },
                 ]}
               >
                 <Text
                   style={[
                     styles.segmentButtonText,
-                    isSelected && styles.segmentButtonTextSelected,
+                    {
+                      color: isSelected ? colors.primary : colors.textMuted,
+                      fontFamily: isSelected ? typography.families.bold : typography.families.medium,
+                    },
                   ]}
                 >
                   {level}
@@ -340,86 +383,125 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
       {/* 5. Metrics Row: Prep Time, Servings, Calories */}
       <View style={styles.metricsRow}>
         {/* Prep Time */}
-        <View style={styles.metricCol}>
+        <View style={[styles.metricCol, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.metricLabelRow}>
-            <Clock size={15} color="#FF6B35" />
-            <Text style={styles.metricLabel}>Prep (mins)</Text>
+            <Clock size={15} color={colors.primary} />
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Prep (mins)</Text>
           </View>
           <TextInput
             value={prepTime}
             onChangeText={setPrepTime}
             keyboardType="numeric"
             placeholder="15"
-            placeholderTextColor="#9CA3AF"
-            style={[styles.input, styles.metricInput, errors.preparationTime ? styles.inputError : null]}
+            placeholderTextColor={colors.textMuted}
+            style={[
+              styles.input,
+              styles.metricInput,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: errors.preparationTime ? colors.error : colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
           />
         </View>
 
         {/* Servings */}
-        <View style={styles.metricCol}>
+        <View style={[styles.metricCol, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.metricLabelRow}>
-            <Users size={15} color="#FF6B35" />
-            <Text style={styles.metricLabel}>Servings</Text>
+            <Users size={15} color={colors.primary} />
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Servings</Text>
           </View>
           <TextInput
             value={servings}
             onChangeText={setServings}
             keyboardType="numeric"
             placeholder="2"
-            placeholderTextColor="#9CA3AF"
-            style={[styles.input, styles.metricInput, errors.servings ? styles.inputError : null]}
+            placeholderTextColor={colors.textMuted}
+            style={[
+              styles.input,
+              styles.metricInput,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: errors.servings ? colors.error : colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
           />
         </View>
 
         {/* Calories */}
-        <View style={styles.metricCol}>
+        <View style={[styles.metricCol, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.metricLabelRow}>
-            <Flame size={15} color="#EF4444" />
-            <Text style={styles.metricLabel}>Calories</Text>
+            <Flame size={15} color={colors.accentSaffron} />
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Calories</Text>
           </View>
           <TextInput
             value={calories}
             onChangeText={setCalories}
             keyboardType="numeric"
             placeholder="350"
-            placeholderTextColor="#9CA3AF"
-            style={[styles.input, styles.metricInput, errors.calories ? styles.inputError : null]}
+            placeholderTextColor={colors.textMuted}
+            style={[
+              styles.input,
+              styles.metricInput,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: errors.calories ? colors.error : colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
           />
         </View>
       </View>
 
       {/* 6. Ingredients */}
-      <View style={styles.section}>
+      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.label}>
-            Ingredients <Text style={styles.required}>*</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Ingredients <Text style={[styles.required, { color: colors.error }]}>*</Text>
           </Text>
-          <Text style={styles.countBadge}>{ingredients.filter(Boolean).length} items</Text>
+          <Text style={[styles.countBadge, { backgroundColor: colors.chipBackground, color: colors.textSecondary }]}>
+            {ingredients.filter(Boolean).length} items
+          </Text>
         </View>
 
         {errors.ingredients ? (
-          <Text style={styles.errorText}>{errors.ingredients}</Text>
+          <Text style={[styles.errorText, { color: colors.error }]}>{errors.ingredients}</Text>
         ) : null}
 
         {/* List of existing ingredients */}
         {ingredients.map((ing, index) => (
           <View key={index} style={styles.dynamicRow}>
-            <View style={styles.indexCircle}>
-              <Text style={styles.indexText}>{index + 1}</Text>
+            <View
+              style={[
+                styles.indexCircle,
+                { backgroundColor: isDark ? 'rgba(240, 138, 106, 0.18)' : palette.peach[100] },
+              ]}
+            >
+              <Text style={[styles.indexText, { color: colors.primary }]}>{index + 1}</Text>
             </View>
             <TextInput
               value={ing}
               onChangeText={(text) => handleUpdateIngredient(text, index)}
               placeholder="e.g. 2 cups almond flour"
-              placeholderTextColor="#9CA3AF"
-              style={[styles.input, styles.dynamicInput]}
+              placeholderTextColor={colors.textMuted}
+              style={[
+                styles.input,
+                styles.dynamicInput,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
+                },
+              ]}
             />
             <TouchableOpacity
               onPress={() => handleRemoveIngredient(index)}
               style={styles.removeBtn}
               accessibilityLabel="Remove ingredient"
             >
-              <Trash2 size={18} color="#EF4444" />
+              <Trash2 size={18} color={colors.deleteButton} />
             </TouchableOpacity>
           </View>
         ))}
@@ -430,56 +512,83 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
             value={newIngredientInput}
             onChangeText={setNewIngredientInput}
             placeholder="Type another ingredient..."
-            placeholderTextColor="#9CA3AF"
-            style={[styles.input, styles.addInputField]}
+            placeholderTextColor={colors.textMuted}
+            style={[
+              styles.input,
+              styles.addInputField,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
             onSubmitEditing={handleAddIngredient}
             returnKeyType="done"
           />
           <TouchableOpacity
             onPress={handleAddIngredient}
             activeOpacity={0.8}
-            style={styles.addBtn}
+            style={[styles.addBtn, { backgroundColor: colors.primary }]}
           >
-            <Plus size={18} color="#FFFFFF" />
+            <Plus size={18} color={palette.white} />
             <Text style={styles.addBtnText}>Add</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* 7. Step-by-Step Instructions */}
-      <View style={styles.section}>
+      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.label}>
-            Step-by-Step Instructions <Text style={styles.required}>*</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Step-by-Step Instructions <Text style={[styles.required, { color: colors.error }]}>*</Text>
           </Text>
-          <Text style={styles.countBadge}>{instructions.filter(Boolean).length} steps</Text>
+          <Text style={[styles.countBadge, { backgroundColor: colors.chipBackground, color: colors.textSecondary }]}>
+            {instructions.filter(Boolean).length} steps
+          </Text>
         </View>
 
         {errors.instructions ? (
-          <Text style={styles.errorText}>{errors.instructions}</Text>
+          <Text style={[styles.errorText, { color: colors.error }]}>{errors.instructions}</Text>
         ) : null}
 
         {/* List of existing instructions */}
         {instructions.map((step, index) => (
-          <View key={index} style={styles.dynamicStepRow}>
+          <View
+            key={index}
+            style={[
+              styles.dynamicStepRow,
+              {
+                backgroundColor: isDark ? colors.backgroundSecondary : palette.gray[50],
+                borderColor: colors.borderSubtle,
+              },
+            ]}
+          >
             <View style={styles.stepHeader}>
-              <Text style={styles.stepTitle}>Step {index + 1}</Text>
+              <Text style={[styles.stepTitle, { color: colors.primary }]}>Step {index + 1}</Text>
               <TouchableOpacity
                 onPress={() => handleRemoveInstruction(index)}
                 style={styles.removeStepBtn}
                 accessibilityLabel="Remove step"
               >
-                <Trash2 size={16} color="#EF4444" />
+                <Trash2 size={16} color={colors.deleteButton} />
               </TouchableOpacity>
             </View>
             <TextInput
               value={step}
               onChangeText={(text) => handleUpdateInstruction(text, index)}
               placeholder="Describe this preparation step..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={3}
-              style={[styles.input, styles.stepInput]}
+              style={[
+                styles.input,
+                styles.stepInput,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
+                },
+              ]}
             />
           </View>
         ))}
@@ -490,18 +599,32 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
             value={newInstructionInput}
             onChangeText={setNewInstructionInput}
             placeholder="Type new step instruction..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={2}
-            style={[styles.input, styles.stepInput]}
+            style={[
+              styles.input,
+              styles.stepInput,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
           />
           <TouchableOpacity
             onPress={handleAddInstruction}
             activeOpacity={0.8}
-            style={styles.addStepBtn}
+            style={[
+              styles.addStepBtn,
+              {
+                backgroundColor: isDark ? 'rgba(240, 138, 106, 0.15)' : palette.peach[50],
+                borderColor: isDark ? 'rgba(240, 138, 106, 0.35)' : palette.peach[500],
+              },
+            ]}
           >
-            <Plus size={18} color="#FF6B35" />
-            <Text style={styles.addStepBtnText}>+ Add Step</Text>
+            <Plus size={18} color={colors.primary} />
+            <Text style={[styles.addStepBtnText, { color: colors.primary }]}>+ Add Step</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -511,13 +634,17 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
         onPress={handleSubmit}
         activeOpacity={0.85}
         disabled={isSubmitting}
-        style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+        style={[
+          styles.submitButton,
+          { backgroundColor: colors.primary, shadowColor: colors.primary },
+          isSubmitting && styles.submitButtonDisabled,
+        ]}
       >
         {isSubmitting ? (
-          <ActivityIndicator color="#FFFFFF" size="small" />
+          <ActivityIndicator color={palette.white} size="small" />
         ) : (
           <>
-            <Check size={20} color="#FFFFFF" strokeWidth={2.5} />
+            <Check size={20} color={palette.white} strokeWidth={2.5} />
             <Text style={styles.submitButtonText}>{submitButtonText}</Text>
           </>
         )}
@@ -529,58 +656,47 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   contentContainer: {
     padding: 16,
     paddingBottom: 60,
   },
   section: {
-    marginBottom: 22,
-    backgroundColor: '#FFFFFF',
+    marginBottom: 20,
     padding: 16,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 2,
   },
   label: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
     marginBottom: 8,
   },
   subLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#6B7280',
+    fontFamily: typography.families.semiBold,
     marginTop: 12,
     marginBottom: 8,
   },
   required: {
-    color: '#EF4444',
+    fontSize: 15,
   },
   input: {
-    backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
-    color: '#111827',
-  },
-  inputError: {
-    borderColor: '#EF4444',
-    backgroundColor: '#FEF2F2',
+    fontFamily: typography.families.regular,
   },
   errorText: {
-    color: '#EF4444',
     fontSize: 13,
+    fontFamily: typography.families.medium,
     marginTop: 4,
   },
   imagePreviewContainer: {
@@ -588,7 +704,6 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#E5E7EB',
   },
   imagePreview: {
     width: '100%',
@@ -600,16 +715,18 @@ const styles = StyleSheet.create({
     right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(17, 24, 39, 0.85)',
+    backgroundColor: 'rgba(14, 26, 23, 0.85)',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   pickImageButtonText: {
-    color: '#FFFFFF',
+    color: palette.white,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: typography.families.semiBold,
   },
   presetRow: {
     flexDirection: 'row',
@@ -621,11 +738,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: palette.transparent,
     padding: 2,
-  },
-  presetItemSelected: {
-    borderColor: '#FF6B35',
   },
   presetThumb: {
     width: 72,
@@ -634,9 +748,9 @@ const styles = StyleSheet.create({
   },
   presetLabel: {
     fontSize: 11,
-    color: '#4B5563',
     marginTop: 3,
     textAlign: 'center',
+    fontFamily: typography.families.medium,
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -647,26 +761,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  categoryChipSelected: {
-    backgroundColor: '#FF6B35',
-    borderColor: '#FF6B35',
   },
   categoryChipText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  categoryChipTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '700',
   },
   segmentedContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
     borderRadius: 10,
     padding: 3,
   },
@@ -676,35 +777,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
   },
-  segmentButtonSelected: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
   segmentButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  segmentButtonTextSelected: {
-    color: '#FF6B35',
-    fontWeight: '700',
   },
   metricsRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 22,
+    marginBottom: 20,
   },
   metricCol: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
   },
   metricLabelRow: {
     flexDirection: 'row',
@@ -714,13 +799,12 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontFamily: typography.families.semiBold,
   },
   metricInput: {
     textAlign: 'center',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     paddingVertical: 6,
   },
   headerRow: {
@@ -731,9 +815,7 @@ const styles = StyleSheet.create({
   },
   countBadge: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-    backgroundColor: '#F3F4F6',
+    fontFamily: typography.families.semiBold,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -748,14 +830,12 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#FFEDD5',
     alignItems: 'center',
     justifyContent: 'center',
   },
   indexText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#EA580C',
+    fontFamily: typography.families.bold,
   },
   dynamicInput: {
     flex: 1,
@@ -775,24 +855,21 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF6B35',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
     gap: 4,
   },
   addBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: palette.white,
+    fontFamily: typography.families.bold,
     fontSize: 14,
   },
   dynamicStepRow: {
-    backgroundColor: '#F9FAFB',
     borderRadius: 10,
     padding: 10,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   stepHeader: {
     flexDirection: 'row',
@@ -802,14 +879,12 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#FF6B35',
+    fontFamily: typography.families.bold,
   },
   removeStepBtn: {
     padding: 4,
   },
   stepInput: {
-    backgroundColor: '#FFFFFF',
     textAlignVertical: 'top',
   },
   addStepContainer: {
@@ -819,29 +894,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF7ED',
     borderWidth: 1,
-    borderColor: '#FDBA74',
     paddingVertical: 10,
     borderRadius: 10,
     gap: 6,
     marginTop: 8,
   },
   addStepBtnText: {
-    color: '#EA580C',
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     fontSize: 14,
   },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF6B35',
     paddingVertical: 15,
     borderRadius: 14,
     gap: 8,
     marginTop: 10,
-    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -851,8 +921,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: palette.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
 });

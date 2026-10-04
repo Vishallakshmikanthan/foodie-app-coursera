@@ -13,9 +13,12 @@ import { useRecipes } from '../context/RecipeContext';
 import { RecipeForm } from '../components/RecipeForm';
 import { RecipeFormData } from '../types/recipe';
 import { useAppRouter } from '../utils/navigation';
+import { useTheme } from '../theme/ThemeProvider';
+import { palette, typography } from '../theme/tokens';
 
 export default function AddRecipeScreen() {
   const router = useAppRouter();
+  const { colors, isDark } = useTheme();
   const { addRecipe } = useRecipes();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,10 +51,18 @@ export default function AddRecipeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.background,
+              borderBottomColor: colors.borderSubtle,
+            },
+          ]}
+        >
           <TouchableOpacity
             onPress={() => {
               if (router.canGoBack()) {
@@ -61,15 +72,23 @@ export default function AddRecipeScreen() {
               }
             }}
             activeOpacity={0.7}
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
+                borderColor: colors.borderSubtle,
+              },
+            ]}
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={22} color="#1F2937" />
+            <ArrowLeft size={22} color={colors.text} />
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Add New Recipe</Text>
-            <Text style={styles.headerSubtitle}>Create your culinary masterpiece</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Add New Recipe</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              Create your culinary masterpiece
+            </Text>
           </View>
 
           <View style={styles.headerRightPlaceholder} />
@@ -89,11 +108,9 @@ export default function AddRecipeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   header: {
     flexDirection: 'row',
@@ -101,30 +118,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   headerTitleContainer: {
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
     marginTop: 2,
   },
   headerRightPlaceholder: {

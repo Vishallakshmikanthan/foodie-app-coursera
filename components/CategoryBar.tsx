@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { CATEGORIES } from '../data/recipes';
 import { useAppRouter } from '../utils/navigation';
+import { useTheme } from '../theme/ThemeProvider';
+import { palette, typography } from '../theme/tokens';
 
 interface CategoryBarProps {
   selectedCategory: string;
@@ -34,6 +36,7 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({
   onSelectCategory,
 }) => {
   const router = useAppRouter();
+  const { colors, isDark } = useTheme();
 
   const handlePress = (category: string) => {
     if (category === 'My Food') {
@@ -61,16 +64,18 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({
               activeOpacity={0.7}
               style={[
                 styles.categoryChip,
-                isSelected && styles.categoryChipSelected,
-                isMyFood && styles.myFoodChip,
+                isDark ? styles.categoryChipDark : styles.categoryChipLight,
+                isSelected && (isDark ? styles.categoryChipSelectedDark : styles.categoryChipSelectedLight),
+                isMyFood && !isSelected && (isDark ? styles.myFoodChipDark : styles.myFoodChipLight),
               ]}
             >
               <Text style={styles.emojiText}>{CATEGORY_EMOJIS[category] || '🍴'}</Text>
               <Text
                 style={[
                   styles.categoryText,
+                  { color: isDark ? colors.textSecondary : colors.textSecondary },
                   isSelected && styles.categoryTextSelected,
-                  isMyFood && styles.myFoodText,
+                  isMyFood && !isSelected && (isDark ? styles.myFoodTextDark : styles.myFoodTextLight),
                 ]}
               >
                 {category}
@@ -85,7 +90,7 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 12,
+    marginVertical: 10,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -95,40 +100,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 24,
-    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
-  categoryChipSelected: {
-    backgroundColor: '#FF6B35',
-    borderColor: '#FF6B35',
-    shadowColor: '#FF6B35',
+  categoryChipDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  categoryChipLight: {
+    backgroundColor: palette.gray[100],
+    borderColor: palette.gray[200],
+  },
+  categoryChipSelectedDark: {
+    backgroundColor: palette.coral[500],
+    borderColor: palette.coral[500],
+    shadowColor: palette.coral[500],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  categoryChipSelectedLight: {
+    backgroundColor: palette.coral[500],
+    borderColor: palette.coral[500],
+    shadowColor: palette.coral[500],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
   },
-  myFoodChip: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FDBA74',
+  myFoodChipDark: {
+    backgroundColor: 'rgba(240, 183, 159, 0.14)',
+    borderColor: 'rgba(240, 183, 159, 0.32)',
+  },
+  myFoodChipLight: {
+    backgroundColor: palette.peach[50],
+    borderColor: palette.peach[500],
   },
   emojiText: {
-    fontSize: 16,
+    fontSize: 15,
     marginRight: 6,
   },
   categoryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontSize: 13,
+    fontFamily: typography.families.semiBold,
   },
   categoryTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: palette.white,
+    fontFamily: typography.families.bold,
   },
-  myFoodText: {
-    color: '#EA580C',
-    fontWeight: '700',
+  myFoodTextDark: {
+    color: palette.peach[200],
+    fontFamily: typography.families.bold,
+  },
+  myFoodTextLight: {
+    color: palette.coral[600],
+    fontFamily: typography.families.bold,
   },
 });

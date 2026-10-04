@@ -14,10 +14,13 @@ import { useRecipes } from '../context/RecipeContext';
 import { RecipeForm } from '../components/RecipeForm';
 import { RecipeFormData } from '../types/recipe';
 import { useAppRouter, useAppParams } from '../utils/navigation';
+import { useTheme } from '../theme/ThemeProvider';
+import { palette, typography } from '../theme/tokens';
 
 export default function EditRecipeScreen() {
   const router = useAppRouter();
   const { id } = useAppParams<{ id: string }>();
+  const { colors, isDark } = useTheme();
   const { getRecipeById, updateRecipe, isLoading } = useRecipes();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,10 +28,10 @@ export default function EditRecipeScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#FF6B35" />
-          <Text style={styles.centerText}>Loading recipe details...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.centerText, { color: colors.textSecondary }]}>Loading recipe details...</Text>
         </View>
       </SafeAreaView>
     );
@@ -36,15 +39,15 @@ export default function EditRecipeScreen() {
 
   if (!recipe) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
-          <Text style={styles.errorTitle}>Recipe Not Found</Text>
-          <Text style={styles.centerText}>
+          <Text style={[styles.errorTitle, { color: colors.error }]}>Recipe Not Found</Text>
+          <Text style={[styles.centerText, { color: colors.textSecondary }]}>
             The recipe you are trying to edit could not be found.
           </Text>
           <TouchableOpacity
             onPress={() => router.replace('/my-food')}
-            style={styles.returnButton}
+            style={[styles.returnButton, { backgroundColor: colors.primary }]}
           >
             <Text style={styles.returnButtonText}>Return to My Food</Text>
           </TouchableOpacity>
@@ -104,10 +107,18 @@ export default function EditRecipeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.background,
+              borderBottomColor: colors.borderSubtle,
+            },
+          ]}
+        >
           <TouchableOpacity
             onPress={() => {
               if (router.canGoBack()) {
@@ -117,15 +128,21 @@ export default function EditRecipeScreen() {
               }
             }}
             activeOpacity={0.7}
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
+                borderColor: colors.borderSubtle,
+              },
+            ]}
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={22} color="#1F2937" />
+            <ArrowLeft size={22} color={colors.text} />
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Edit Recipe</Text>
-            <Text style={styles.headerSubtitle} numberOfLines={1}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Recipe</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
               {recipe.name}
             </Text>
           </View>
@@ -148,11 +165,9 @@ export default function EditRecipeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   header: {
     flexDirection: 'row',
@@ -160,17 +175,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   headerTitleContainer: {
     alignItems: 'center',
@@ -178,13 +191,11 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
     marginTop: 2,
   },
   headerRightPlaceholder: {
@@ -198,25 +209,23 @@ const styles = StyleSheet.create({
   },
   centerText: {
     fontSize: 15,
-    color: '#6B7280',
+    fontFamily: typography.families.medium,
     textAlign: 'center',
     marginTop: 10,
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#EF4444',
+    fontFamily: typography.families.bold,
   },
   returnButton: {
     marginTop: 20,
-    backgroundColor: '#FF6B35',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
   },
   returnButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: palette.white,
+    fontFamily: typography.families.bold,
     fontSize: 14,
   },
 });

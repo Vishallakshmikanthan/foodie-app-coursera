@@ -15,7 +15,6 @@ import {
   Heart,
   ChefHat,
   CookingPot,
-  Sparkles,
 } from 'lucide-react-native';
 import { useRecipes } from '../context/RecipeContext';
 import { CategoryBar } from '../components/CategoryBar';
@@ -23,9 +22,12 @@ import { RecipeCard } from '../components/RecipeCard';
 import { EmptyState } from '../components/EmptyState';
 import { BottomNav } from '../components/BottomNav';
 import { useAppRouter } from '../utils/navigation';
+import { useTheme } from '../theme/ThemeProvider';
+import { palette, typography } from '../theme/tokens';
 
 export default function HomeScreen() {
   const router = useAppRouter();
+  const { colors, isDark } = useTheme();
   const {
     recipes,
     selectedCategory,
@@ -58,17 +60,19 @@ export default function HomeScreen() {
   }, [recipes, selectedCategory, searchQuery]);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Top Header Section */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
           <View style={styles.brandRow}>
-            <View style={styles.logoBadge}>
-              <CookingPot size={22} color="#FFFFFF" strokeWidth={2.5} />
+            <View style={[styles.logoBadge, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+              <CookingPot size={22} color={palette.white} strokeWidth={2.5} />
             </View>
             <View style={styles.brandTextContainer}>
-              <Text style={styles.brandName}>Foodie</Text>
-              <Text style={styles.greetingText}>Delicious meals made simple</Text>
+              <Text style={[styles.brandName, { color: colors.text }]}>Foodie</Text>
+              <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
+                Delicious meals made simple
+              </Text>
             </View>
 
             {/* Quick Header Actions */}
@@ -76,12 +80,22 @@ export default function HomeScreen() {
               <TouchableOpacity
                 onPress={() => router.push('/favorites')}
                 activeOpacity={0.7}
-                style={styles.headerIconButton}
+                style={[
+                  styles.headerIconButton,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
                 accessibilityLabel="Go to Favorites"
               >
-                <Heart size={20} color="#E53935" fill={favoriteRecipes.length > 0 ? '#E53935' : 'transparent'} />
+                <Heart
+                  size={20}
+                  color={colors.favoriteActive}
+                  fill={favoriteRecipes.length > 0 ? colors.favoriteActive : palette.transparent}
+                />
                 {favoriteRecipes.length > 0 && (
-                  <View style={styles.headerBadge}>
+                  <View style={[styles.headerBadge, { backgroundColor: colors.error }]}>
                     <Text style={styles.headerBadgeText}>
                       {favoriteRecipes.length > 99 ? '99+' : favoriteRecipes.length}
                     </Text>
@@ -92,26 +106,42 @@ export default function HomeScreen() {
               <TouchableOpacity
                 onPress={() => router.push('/my-food')}
                 activeOpacity={0.7}
-                style={styles.headerIconButton}
+                style={[
+                  styles.headerIconButton,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.gray[100],
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
                 accessibilityLabel="Go to My Food"
               >
-                <ChefHat size={20} color="#FF6B35" />
+                <ChefHat size={20} color={colors.primary} />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Welcoming Message & Subheader */}
-          <Text style={styles.welcomeTitle}>What would you like to cook today? ✨</Text>
+          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+            What would you like to cook today? ✨
+          </Text>
 
           {/* Search Field */}
-          <View style={styles.searchBar}>
-            <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
+          <View
+            style={[
+              styles.searchBar,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+              },
+            ]}
+          >
+            <Search size={18} color={colors.textMuted} style={styles.searchIcon} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search recipes, ingredients, tags..."
-              placeholderTextColor="#9CA3AF"
-              style={styles.searchInput}
+              placeholderTextColor={colors.textMuted}
+              style={[styles.searchInput, { color: colors.text }]}
               clearButtonMode="while-editing"
             />
             {searchQuery.length > 0 && (
@@ -119,7 +149,7 @@ export default function HomeScreen() {
                 onPress={() => setSearchQuery('')}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <X size={16} color="#6B7280" />
+                <X size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -133,10 +163,10 @@ export default function HomeScreen() {
 
         {/* Recipe Feed Header */}
         <View style={styles.feedInfoBar}>
-          <Text style={styles.feedTitle}>
+          <Text style={[styles.feedTitle, { color: colors.text }]}>
             {selectedCategory === 'All' ? 'All Recipes' : `${selectedCategory} Recipes`}
           </Text>
-          <Text style={styles.feedCount}>
+          <Text style={[styles.feedCount, { color: colors.textSecondary }]}>
             {filteredRecipes.length} {filteredRecipes.length === 1 ? 'recipe' : 'recipes'}
           </Text>
         </View>
@@ -144,8 +174,10 @@ export default function HomeScreen() {
         {/* Recipe Feed List */}
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FF6B35" />
-            <Text style={styles.loadingText}>Loading fresh recipes...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+              Loading fresh recipes...
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -158,7 +190,7 @@ export default function HomeScreen() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <EmptyState
-                icon={<CookingPot size={32} color="#9CA3AF" />}
+                icon={<CookingPot size={32} color={colors.textMuted} />}
                 title="No recipes found"
                 description={
                   searchQuery.trim().length > 0
@@ -185,17 +217,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   header: {
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 4,
-    backgroundColor: '#FFFFFF',
   },
   brandRow: {
     flexDirection: 'row',
@@ -206,11 +235,9 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#FF6B35',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
-    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -221,14 +248,12 @@ const styles = StyleSheet.create({
   },
   brandName: {
     fontSize: 22,
-    fontWeight: '800',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
     letterSpacing: -0.5,
   },
   greetingText: {
     fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
   headerActions: {
     flexDirection: 'row',
@@ -239,16 +264,15 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    borderWidth: 1,
   },
   headerBadge: {
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: '#EF4444',
     borderRadius: 8,
     minWidth: 16,
     height: 16,
@@ -257,24 +281,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   headerBadgeText: {
-    color: '#FFFFFF',
+    color: palette.white,
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
   welcomeTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    fontFamily: typography.families.bold,
     marginVertical: 6,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     marginTop: 6,
+    borderWidth: 1,
   },
   searchIcon: {
     marginRight: 8,
@@ -282,7 +305,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#111827',
+    fontFamily: typography.families.regular,
     padding: 0,
   },
   feedInfoBar: {
@@ -294,13 +317,11 @@ const styles = StyleSheet.create({
   },
   feedTitle: {
     fontSize: 17,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontFamily: typography.families.bold,
   },
   feedCount: {
     fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
   listContent: {
     paddingHorizontal: 16,
@@ -315,7 +336,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
 });

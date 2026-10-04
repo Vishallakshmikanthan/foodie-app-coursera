@@ -3,11 +3,18 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { Home, Heart, UtensilsCrossed, PlusCircle } from 'lucide-react-native';
 import { useRecipes } from '../context/RecipeContext';
 import { useAppRouter, useAppPathname } from '../utils/navigation';
+import { useTheme } from '../theme/ThemeProvider';
+import { palette, typography } from '../theme/tokens';
 
 export const BottomNav: React.FC = () => {
   const pathname = useAppPathname();
   const router = useAppRouter();
   const { favoriteRecipes } = useRecipes();
+  const { colors, isDark } = useTheme();
+
+  const activeColor = colors.primary; // palette.coral[500]
+  const inactiveColor = isDark ? colors.textMuted : palette.gray[400];
+  const heartActiveColor = colors.favoriteActive;
 
   const navItems = [
     {
@@ -15,7 +22,7 @@ export const BottomNav: React.FC = () => {
       label: 'Home',
       route: '/',
       icon: (active: boolean) => (
-        <Home size={22} color={active ? '#FF6B35' : '#9CA3AF'} strokeWidth={active ? 2.5 : 2} />
+        <Home size={22} color={active ? activeColor : inactiveColor} strokeWidth={active ? 2.5 : 2} />
       ),
     },
     {
@@ -26,8 +33,8 @@ export const BottomNav: React.FC = () => {
       icon: (active: boolean) => (
         <Heart
           size={22}
-          color={active ? '#E53935' : '#9CA3AF'}
-          fill={active ? '#E53935' : 'transparent'}
+          color={active ? heartActiveColor : inactiveColor}
+          fill={active ? heartActiveColor : palette.transparent}
           strokeWidth={active ? 2.5 : 2}
         />
       ),
@@ -37,7 +44,7 @@ export const BottomNav: React.FC = () => {
       label: 'Add Recipe',
       route: '/add-recipe',
       isCenter: true,
-      icon: (_active: boolean) => <PlusCircle size={28} color="#FFFFFF" strokeWidth={2.2} />,
+      icon: (_active: boolean) => <PlusCircle size={28} color={palette.white} strokeWidth={2.2} />,
     },
     {
       key: 'my-food',
@@ -46,7 +53,7 @@ export const BottomNav: React.FC = () => {
       icon: (active: boolean) => (
         <UtensilsCrossed
           size={22}
-          color={active ? '#FF6B35' : '#9CA3AF'}
+          color={active ? activeColor : inactiveColor}
           strokeWidth={active ? 2.5 : 2}
         />
       ),
@@ -54,7 +61,15 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: isDark ? palette.forest[950] : palette.white,
+          borderTopColor: colors.border,
+        },
+      ]}
+    >
       {navItems.map((item) => {
         const isActive =
           item.route === '/'
@@ -71,8 +86,22 @@ export const BottomNav: React.FC = () => {
               accessibilityRole="button"
               accessibilityLabel="Add New Recipe"
             >
-              <View style={styles.centerButtonInner}>{item.icon(false)}</View>
-              <Text style={styles.centerLabel}>{item.label}</Text>
+              <View
+                style={[
+                  styles.centerButtonInner,
+                  { backgroundColor: activeColor, shadowColor: activeColor },
+                ]}
+              >
+                {item.icon(false)}
+              </View>
+              <Text
+                style={[
+                  styles.centerLabel,
+                  { color: activeColor },
+                ]}
+              >
+                {item.label}
+              </Text>
             </TouchableOpacity>
           );
         }
@@ -89,12 +118,20 @@ export const BottomNav: React.FC = () => {
             <View style={styles.iconContainer}>
               {item.icon(isActive)}
               {item.badge !== undefined && (
-                <View style={styles.badge}>
+                <View style={[styles.badge, { backgroundColor: colors.error }]}>
                   <Text style={styles.badgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
                 </View>
               )}
             </View>
-            <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>{item.label}</Text>
+            <Text
+              style={[
+                styles.navLabel,
+                { color: isActive ? activeColor : inactiveColor },
+                isActive && styles.navLabelActive,
+              ]}
+            >
+              {item.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -107,15 +144,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 24 : 10,
-    shadowColor: '#000',
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     elevation: 8,
   },
   navItem: {
@@ -133,7 +168,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -4,
     right: -10,
-    backgroundColor: '#EF4444',
     borderRadius: 10,
     minWidth: 18,
     height: 18,
@@ -142,19 +176,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: palette.white,
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
   navLabel: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
+    fontFamily: typography.families.medium,
     marginTop: 4,
   },
   navLabelActive: {
-    color: '#FF6B35',
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
   centerButton: {
     alignItems: 'center',
@@ -163,22 +195,19 @@ const styles = StyleSheet.create({
     top: -6,
   },
   centerButtonInner: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#FF6B35',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
-    shadowRadius: 6,
+    shadowRadius: 8,
     elevation: 6,
   },
   centerLabel: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#FF6B35',
+    fontFamily: typography.families.semiBold,
     marginTop: 3,
   },
 });
