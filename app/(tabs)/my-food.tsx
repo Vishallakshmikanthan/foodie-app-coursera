@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -107,6 +108,10 @@ export default function MyFoodScreen() {
         <FlatList
           data={userRecipes}
           keyExtractor={(item) => item.id}
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS !== 'web'}
           renderItem={({ item, index }) => (
             <RecipeCard
               recipe={item}

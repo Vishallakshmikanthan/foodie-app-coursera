@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Heart, Plus } from 'lucide-react-native';
@@ -79,6 +80,10 @@ export default function FavoritesScreen() {
           <FlatList
             data={favoriteRecipes}
             keyExtractor={(item) => item.id}
+            initialNumToRender={6}
+            maxToRenderPerBatch={6}
+            windowSize={5}
+            removeClippedSubviews={Platform.OS !== 'web'}
             renderItem={({ item, index }) => (
               <RecipeCard recipe={item} index={index} onToggleFavorite={toggleFavorite} />
             )}

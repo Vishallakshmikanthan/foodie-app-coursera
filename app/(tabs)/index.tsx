@@ -17,11 +17,13 @@ import { GlassRefreshControl } from '../../components/GlassRefreshControl';
 import { HeroCarousel } from '../../components/HeroCarousel';
 import { HomeHeader } from '../../components/HomeHeader';
 import { HomeMenuModal } from '../../components/HomeMenuModal';
+import { OnboardingModal } from '../../components/OnboardingModal';
 import { RecipeCard } from '../../components/RecipeCard';
 import { RecommendedRow } from '../../components/RecommendedRow';
 import { SearchSuggestions } from '../../components/SearchSuggestions';
 import { GradientBackground } from '../../components/ui/GradientBackground';
 import { useRecipes } from '../../context/RecipeContext';
+import { useUserProfile } from '../../context/UserProfileContext';
 import { useTheme } from '../../theme/ThemeProvider';
 import { palette, typography, radii } from '../../theme/tokens';
 import { Recipe } from '../../types/recipe';
@@ -32,6 +34,7 @@ import { haptics } from '../../utils/haptics';
 export default function HomeScreen() {
   const router = useAppRouter();
   const { colors, isDark } = useTheme();
+  const { profile, isLoading: isProfileLoading } = useUserProfile();
   const {
     recipes,
     selectedCategory,
@@ -113,9 +116,11 @@ export default function HomeScreen() {
         >
           {/* Top Header Row with Glass Controls & Time-Aware Greeting */}
           <HomeHeader
-            userName="Vishal"
+            userName={profile.name}
+            avatarUrl={profile.avatar}
             favoritesCount={favoriteRecipes.length}
             onPressMenu={() => setIsMenuOpen(true)}
+            onPressAvatar={() => router.push('/profile')}
             onPressFavorites={handleFavoritesPress}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -276,7 +281,7 @@ export default function HomeScreen() {
       <HomeMenuModal
         visible={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
-        userName="Vishal"
+        userName={profile.name}
       />
 
       {/* Smart Filters Bottom Sheet Modal */}
@@ -286,6 +291,12 @@ export default function HomeScreen() {
         options={filterOptions}
         onChangeOptions={setFilterOptions}
         recipes={recipes}
+      />
+
+      {/* 3-Step Onboarding Modal (Auto-opens on first launch) */}
+      <OnboardingModal
+        visible={!profile.hasCompletedOnboarding && !isProfileLoading}
+        isInitialLaunch={true}
       />
     </View>
   );

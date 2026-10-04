@@ -1,5 +1,6 @@
 import { Recipe } from '../types/recipe';
 import { RecentlyViewedItem } from '../types/smart';
+import { UserProfile } from '../types/user';
 
 export type TimeOfDaySlot = 'morning' | 'lunch' | 'afternoon' | 'evening' | 'latenight';
 
@@ -7,6 +8,29 @@ export interface RecommendationResult {
   recipe: Recipe;
   score: number;
   reason: string;
+}
+
+const CUISINE_KEYWORDS: Record<string, string[]> = {
+  Italian: ['risotto', 'pizza', 'pasta', 'margherita', 'parmesan', 'sourdough', 'italian'],
+  Japanese: ['ramen', 'matcha', 'tonkotsu', 'sushi', 'miso', 'teriyaki', 'japanese'],
+  Mexican: ['taco', 'tacos', 'salsa', 'corn', 'guacamole', 'tortilla', 'mexican'],
+  Indian: ['butter chicken', 'curry', 'biryani', 'masala', 'paneer', 'naan', 'indian'],
+  Mediterranean: ['quinoa', 'greek', 'tagine', 'salmon', 'hummus', 'olive', 'mediterranean'],
+  Thai: ['tom yum', 'pad thai', 'sticky rice', 'mango', 'thai', 'lemongrass'],
+  American: ['avocado toast', 'burger', 'acai', 'pancake', 'bbq', 'american'],
+  French: ['lava cake', 'souffle', 'croissant', 'crepe', 'french'],
+  Moroccan: ['tagine', 'couscous', 'chickpea', 'moroccan'],
+  Chinese: ['dim sum', 'dumpling', 'noodle', 'stir fry', 'wonton', 'chinese'],
+};
+
+function detectRecipeCuisine(recipe: Recipe): string | undefined {
+  const text = `${recipe.name} ${recipe.category} ${recipe.instructions.join(' ')}`.toLowerCase();
+  for (const [cuisine, keywords] of Object.entries(CUISINE_KEYWORDS)) {
+    if (keywords.some((kw) => text.includes(kw))) {
+      return cuisine;
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -49,8 +73,18 @@ function getRecommendationReason(
   recipe: Recipe,
   slot: TimeOfDaySlot,
   isFavCategory: boolean,
-  isRecentlyViewedCategory: boolean
+  isRecentlyViewedCategory: boolean,
+  matchedCuisine?: string,
+  dietaryMatch?: string
 ): string {
+  if (matchedCuisine) {
+    return `Matches your love for ${matchedCuisine}`;
+  }
+
+  if (dietaryMatch) {
+    return dietaryMatch;
+  }
+
   if (matchesTimeSlot(recipe.category, slot)) {
     switch (slot) {
       case 'morning':
@@ -92,7 +126,8 @@ export function getSmartRecommendations(
   allRecipes: Recipe[],
   favoriteRecipes: Recipe[],
   recentlyViewed: RecentlyViewedItem[] = [],
-  limit: number = 6
+  limit: number = 6,
+  userProfile?: UserProfile
 ): RecommendationResult[] {
   if (!allRecipes || allRecipes.length === 0) return [];
 
@@ -119,6 +154,8 @@ export function getSmartRecommendations(
   const scoredList: RecommendationResult[] = allRecipes.map((recipe) => {
     let score = 50; // Baseline score
     const catLower = recipe.category.toLowerCase();
+    let matchedCuisine: string | undefined = undefined;
+    let dietaryReason: string | undefined = undefined;
 
     // 1. Time of day matching (+35 points)
     const timeMatch = matchesTimeSlot(recipe.category, timeSlot);
@@ -133,34 +170,89 @@ export function getSmartRecommendations(
       score += Math.min(25, favCount * 12);
     }
 
-    // 3. Recently viewed category synergy (+18 points)
+    // 3. User Favorite Cuisines preference (+30 points)
+    if (userProfile?.favoriteCuisines && userProfile.favoriteCuisines.length > 0) {
+      const detected = detectRecipeCuisine(recipe);
+      if (detected && userProfile.favoriteCuisines.includes(detected)) {
+        score += 30;
+        matchedCuisine = detected;
+      }
+    }
+
+    // 4. User Dietary Preference (+25 points or penalty if incompatible)
+    if (userProfile?.dietaryPreference && userProfile.dietaryPreference !== 'All') {
+      const diet = userProfile.dietaryPreference;
+      const isVeg = catLower === 'vegetarian' || catLower === 'salads' || catLower === 'breakfast';
+      const isNonVeg = catLower === 'non-vegetarian';
+
+      if (diet === 'Vegetarian') {
+        if (isVeg) {
+          score += 25;
+          dietaryReason = 'Vegetarian favorite';
+        } else if (isNonVeg) {
+          score -= 50;
+        }
+      } else if (diet === 'Vegan') {
+        if (catLower === 'salads' || catLower === 'vegetarian') {
+          score += 25;
+          dietaryReason = 'Vegan friendly';
+        } else if (isNonVeg) {
+          score -= 60;
+        }
+      } else if (diet === 'Pescatarian') {
+        const text = `${recipe.name} ${recipe.instructions.join(' ')}`.toLowerCase();
+        if (text.includes('salmon') || text.includes('fish') || text.includes('shrimp') || isVeg) {
+          score += 25;
+          dietaryReason = 'Pescatarian choice';
+        }
+      } else if (diet === 'Gluten-Free') {
+        if (catLower === 'salads' || catLower === 'soups') {
+          score += 15;
+          dietaryReason = 'Gluten-free option';
+        }
+      } else if (diet === 'Keto') {
+        if (recipe.calories < 550 && (catLower === 'lunch' || catLower === 'dinner' || catLower === 'salads')) {
+          score += 20;
+          dietaryReason = 'Keto friendly';
+        }
+      }
+    }
+
+    // 5. Recently viewed category synergy (+18 points)
     const recentCatCount = recentCategoryCounts[catLower] || 0;
     const isRecentCategory = recentCatCount > 0;
     if (isRecentCategory) {
       score += Math.min(18, recentCatCount * 9);
     }
 
-    // 4. Quick prep bonus (+10 points)
+    // 6. Quick prep bonus (+10 points)
     if (recipe.preparationTime <= 25) {
       score += 10;
     }
 
-    // 5. Already favorite boost (+12 points)
+    // 7. Already favorite boost (+12 points)
     if (recipe.isFavorite) {
       score += 12;
     }
 
-    // 6. User-created dishes pride (+15 points)
+    // 8. User-created dishes pride (+15 points)
     if (recipe.isUserCreated) {
       score += 15;
     }
 
-    // 7. Prevent identical repetition: if viewed in the last 20 minutes, slight offset
+    // 9. Prevent identical repetition: if viewed in the last 20 minutes, slight offset
     if (recentIds.has(recipe.id)) {
       score -= 8;
     }
 
-    const reason = getRecommendationReason(recipe, timeSlot, isFavCategory, isRecentCategory);
+    const reason = getRecommendationReason(
+      recipe,
+      timeSlot,
+      isFavCategory,
+      isRecentCategory,
+      matchedCuisine,
+      dietaryReason
+    );
 
     return {
       recipe,

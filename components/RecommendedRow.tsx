@@ -9,6 +9,7 @@ import {
 import { ChevronRight, Sparkles } from 'lucide-react-native';
 import { Recipe } from '../types/recipe';
 import { useRecipes } from '../context/RecipeContext';
+import { useUserProfile } from '../context/UserProfileContext';
 import { PortraitCard } from './PortraitCard';
 import { getSmartRecommendations } from '../utils/recommendationEngine';
 import { palette, typography } from '../theme/tokens';
@@ -27,11 +28,12 @@ export const RecommendedRow: React.FC<RecommendedRowProps> = ({
   onPressSeeAll,
 }) => {
   const { cookingProgress, favoriteRecipes, recentlyViewed } = useRecipes();
+  const { profile } = useUserProfile();
 
-  // Smart recommendations scored by time-of-day, favorites, and view history
+  // Smart recommendations scored by time-of-day, user profile preferences, favorites, and view history
   const recommendedItems = useMemo(() => {
-    return getSmartRecommendations(recipes, favoriteRecipes, recentlyViewed, 8);
-  }, [recipes, favoriteRecipes, recentlyViewed]);
+    return getSmartRecommendations(recipes, favoriteRecipes, recentlyViewed, 8, profile);
+  }, [recipes, favoriteRecipes, recentlyViewed, profile]);
 
   if (recommendedItems.length === 0) {
     return null;

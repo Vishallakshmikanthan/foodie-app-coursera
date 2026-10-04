@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -353,6 +354,10 @@ export default function ExploreScreen() {
           <FlatList
             data={filteredRecipes}
             keyExtractor={(item) => item.id}
+            initialNumToRender={6}
+            maxToRenderPerBatch={6}
+            windowSize={5}
+            removeClippedSubviews={Platform.OS !== 'web'}
             renderItem={({ item, index }) => (
               <RecipeCard recipe={item} index={index} onToggleFavorite={toggleFavorite} />
             )}

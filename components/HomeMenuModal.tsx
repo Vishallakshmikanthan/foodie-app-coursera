@@ -10,6 +10,8 @@ import {
   UtensilsCrossed,
   X,
   ShoppingCart,
+  User,
+  Sliders,
 } from 'lucide-react-native';
 import React from 'react';
 import {
@@ -22,6 +24,7 @@ import {
   View,
 } from 'react-native';
 import { useRecipes } from '../context/RecipeContext';
+import { useUserProfile } from '../context/UserProfileContext';
 import { palette, typography } from '../theme/tokens';
 import { useAppRouter } from '../utils/navigation';
 import { GlassSurface } from './ui/GlassSurface';
@@ -35,10 +38,12 @@ export interface HomeMenuModalProps {
 export const HomeMenuModal: React.FC<HomeMenuModalProps> = ({
   visible,
   onClose,
-  userName = 'Vishal',
+  userName: propUserName,
 }) => {
   const router = useAppRouter();
+  const { profile } = useUserProfile();
   const { recipes, userRecipes, favoriteRecipes, shoppingList } = useRecipes();
+  const displayName = profile.name || propUserName || 'Vishal';
 
   const handleNavigate = (route: string) => {
     onClose();
@@ -85,22 +90,32 @@ export const HomeMenuModal: React.FC<HomeMenuModalProps> = ({
               </TouchableOpacity>
             </View>
 
-            {/* User Profile Card */}
-            <View style={styles.profileCard}>
+            {/* User Profile Card - Clickable to Profile Screen */}
+            <TouchableOpacity
+              onPress={() => handleNavigate('/profile')}
+              activeOpacity={0.8}
+              style={styles.profileCard}
+              accessibilityRole="button"
+              accessibilityLabel={`Chef Profile: ${displayName}`}
+              accessibilityHint="Navigates to chef profile, stats, and settings"
+            >
               <View style={styles.avatarWrapper}>
                 <Image
                   source={{
-                    uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                    uri:
+                      profile.avatar ||
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
                   }}
                   style={styles.avatar}
                   contentFit="cover"
                 />
               </View>
               <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{userName} </Text>
+                <Text style={styles.profileName}>{displayName}</Text>
                 <Text style={styles.profileRole}>Master Home Chef</Text>
               </View>
-            </View>
+              <ChevronRight size={18} color={palette.mint[300]} />
+            </TouchableOpacity>
 
             {/* Quick Stats Grid */}
             <View style={styles.statsRow}>
@@ -124,6 +139,20 @@ export const HomeMenuModal: React.FC<HomeMenuModalProps> = ({
 
             {/* Navigation Links */}
             <View style={styles.linksList}>
+              <TouchableOpacity
+                onPress={() => handleNavigate('/profile')}
+                activeOpacity={0.75}
+                style={styles.menuItem}
+                accessibilityRole="button"
+                accessibilityLabel="Chef Profile and Settings"
+              >
+                <View style={[styles.menuIconBg, { backgroundColor: 'rgba(195, 235, 197, 0.18)' }]}>
+                  <User size={18} color={palette.mint[300]} />
+                </View>
+                <Text style={styles.menuText}>Chef Profile & Settings</Text>
+                <ChevronRight size={16} color={palette.text.onDarkSecondary} />
+              </TouchableOpacity>
+
               <TouchableOpacity
                 onPress={() => handleNavigate('/explore')}
                 activeOpacity={0.75}

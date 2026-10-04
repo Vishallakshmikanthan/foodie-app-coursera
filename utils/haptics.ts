@@ -160,6 +160,42 @@ class HapticsService {
   }
 
   /**
+   * Selection feedback for chips and radio toggles
+   */
+  public async selection(): Promise<void> {
+    if (!this.isEnabled()) return;
+    try {
+      await Haptics.selectionAsync();
+    } catch {
+      // Ignore unsupported device errors
+    }
+  }
+
+  /**
+   * Form success feedback
+   */
+  public async formSuccess(): Promise<void> {
+    if (!this.isEnabled()) return;
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      // Ignore unsupported device errors
+    }
+  }
+
+  /**
+   * Celebration / Completion feedback
+   */
+  public async celebration(): Promise<void> {
+    if (!this.isEnabled()) return;
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      // Ignore unsupported device errors
+    }
+  }
+
+  /**
    * Heavy impact
    */
   public async impactHeavy(): Promise<void> {

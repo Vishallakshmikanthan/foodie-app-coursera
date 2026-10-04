@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recipe, CookingProgress } from '../types/recipe';
 import { ShoppingItem, RecentlyViewedItem } from '../types/smart';
+import { UserProfile, DEFAULT_USER_PROFILE } from '../types/user';
 import { parseIngredients } from './ingredientUtils';
 
 const STORAGE_KEYS = {
@@ -12,6 +13,7 @@ const STORAGE_KEYS = {
   RECENTLY_VIEWED: '@foodie_recently_viewed',
   RECENT_SEARCHES: '@foodie_recent_searches',
   SHOPPING_LIST: '@foodie_shopping_list',
+  USER_PROFILE: '@foodie_user_profile',
 };
 
 export const storage = {
@@ -247,6 +249,39 @@ export const storage = {
       await AsyncStorage.setItem(STORAGE_KEYS.SHOPPING_LIST, JSON.stringify(items));
     } catch (error) {
       console.error('Error saving shopping list:', error);
+    }
+  },
+
+  // User Profile Persistence
+  async getUserProfile(): Promise<UserProfile> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+      if (!data) return DEFAULT_USER_PROFILE;
+      const parsed = JSON.parse(data);
+      return {
+        ...DEFAULT_USER_PROFILE,
+        ...parsed,
+      };
+    } catch (error) {
+      console.error('Error reading user profile from storage:', error);
+      return DEFAULT_USER_PROFILE;
+    }
+  },
+
+  async saveUserProfile(profile: UserProfile): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+    } catch (error) {
+      console.error('Error saving user profile to storage:', error);
+    }
+  },
+
+  // Complete data reset for QA and testing
+  async clearAllData(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+    } catch (error) {
+      console.error('Error clearing all app data:', error);
     }
   },
 };

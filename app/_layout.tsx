@@ -17,6 +17,7 @@ import {
   Fraunces_700Bold,
 } from '@expo-google-fonts/fraunces';
 import { RecipeProvider } from '../context/RecipeContext';
+import { UserProfileProvider } from '../context/UserProfileContext';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { palette } from '../theme/tokens';
@@ -48,25 +49,28 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <ThemeProvider>
-          <RecipeProvider>
-            <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: palette.forest[900] },
-              animation: 'slide_from_right',
-            }}
-          >
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="add-recipe" options={{ headerShown: false }} />
-            <Stack.Screen name="edit-recipe" options={{ headerShown: false }} />
-            <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="cook/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="shopping-list" options={{ headerShown: false }} />
-            <Stack.Screen name="glass-preview" options={{ headerShown: false }} />
-          </Stack>
-        </RecipeProvider>
-      </ThemeProvider>
+          <UserProfileProvider>
+            <RecipeProvider>
+              <StatusBar style="light" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: palette.forest[900] },
+                  animation: 'slide_from_right',
+                }}
+              >
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="profile" options={{ headerShown: false }} />
+                <Stack.Screen name="add-recipe" options={{ headerShown: false }} />
+                <Stack.Screen name="edit-recipe" options={{ headerShown: false }} />
+                <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="cook/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="shopping-list" options={{ headerShown: false }} />
+                <Stack.Screen name="glass-preview" options={{ headerShown: false }} />
+              </Stack>
+            </RecipeProvider>
+          </UserProfileProvider>
+        </ThemeProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
   );

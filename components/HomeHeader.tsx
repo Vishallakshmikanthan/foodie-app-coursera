@@ -16,8 +16,10 @@ import { GlassSurface } from './ui/GlassSurface';
 
 export interface HomeHeaderProps {
   userName?: string;
+  avatarUrl?: string;
   favoritesCount: number;
   onPressMenu: () => void;
+  onPressAvatar?: () => void;
   onPressFavorites: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -27,8 +29,10 @@ export interface HomeHeaderProps {
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   userName = 'Vishal',
+  avatarUrl,
   favoritesCount,
   onPressMenu,
+  onPressAvatar,
   onPressFavorites,
   searchQuery,
   onSearchChange,
@@ -105,16 +109,19 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
           {/* User Chef Avatar */}
           <TouchableOpacity
-            onPress={onPressMenu}
+            onPress={onPressAvatar || onPressMenu}
             activeOpacity={0.8}
             style={styles.avatarButton}
             accessibilityRole="button"
             accessibilityLabel={`User profile: ${userName}`}
+            accessibilityHint="Navigates to chef profile and settings"
           >
             <View style={styles.avatarFrame}>
               <Image
                 source={{
-                  uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                  uri:
+                    avatarUrl ||
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
                 }}
                 style={styles.avatarImage}
                 contentFit="cover"
