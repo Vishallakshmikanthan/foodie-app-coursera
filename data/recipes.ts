@@ -1,4 +1,5 @@
-import { Recipe } from '../types/recipe';
+import { Recipe, DifficultyLevel } from '../types/recipe';
+import { parseIngredients } from '../utils/ingredientUtils';
 
 export const CATEGORIES = [
   'All',
@@ -33,7 +34,7 @@ export const RECIPE_CATEGORIES = [
 export const DEFAULT_RECIPE_IMAGE =
   'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
-export const SEED_RECIPES: Recipe[] = [
+const RAW_SEED_RECIPES = [
   {
     id: 'seed-1',
     name: 'Avocado Toast with Poached Egg',
@@ -549,3 +550,9 @@ export const SEED_RECIPES: Recipe[] = [
     isUserCreated: false,
   },
 ];
+
+export const SEED_RECIPES: Recipe[] = RAW_SEED_RECIPES.map((recipe) => ({
+  ...recipe,
+  difficulty: recipe.difficulty as DifficultyLevel,
+  ingredients: parseIngredients(recipe.ingredients),
+}));

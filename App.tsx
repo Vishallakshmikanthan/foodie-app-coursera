@@ -16,6 +16,7 @@ import MyFoodScreen from './app/(tabs)/my-food';
 import AddRecipeScreen from './app/add-recipe';
 import EditRecipeScreen from './app/edit-recipe';
 import RecipeDetailScreen from './app/recipe/[id]';
+import CookModeScreen from './app/cook/[id]';
 import GlassPreviewScreen from './app/glass-preview';
 
 function SnackScreenRenderer() {
@@ -46,6 +47,9 @@ function SnackScreenRenderer() {
     }
     if (pathname === '/recipe' || pathname.startsWith('/recipe/')) {
       return <RecipeDetailScreen />;
+    }
+    if (pathname === '/cook' || pathname.startsWith('/cook/')) {
+      return <CookModeScreen />;
     }
     if (pathname === '/glass-preview') {
       return <GlassPreviewScreen />;

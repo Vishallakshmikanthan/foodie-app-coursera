@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Recipe, RecipeFormData } from '../types/recipe';
+import { Recipe, RecipeFormData, CookingProgress } from '../types/recipe';
 import { SEED_RECIPES, DEFAULT_RECIPE_IMAGE } from '../data/recipes';
 import { storage } from '../utils/storage';
+import { parseIngredients } from '../utils/ingredientUtils';
 
 interface RecipeContextType {
   recipes: Recipe[];
   userRecipes: Recipe[];
   favoriteRecipes: Recipe[];
+  cookingProgress: Record<string, CookingProgress>;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
   searchQuery: string;
@@ -17,6 +19,9 @@ interface RecipeContextType {
   updateRecipe: (id: string, data: RecipeFormData) => Promise<boolean>;
   deleteRecipe: (id: string) => Promise<boolean>;
   getRecipeById: (id: string) => Recipe | undefined;
+  updateCookingProgress: (recipeId: string, step: number, completedSteps?: number[]) => Promise<void>;
+  clearCookingProgress: (recipeId: string) => Promise<void>;
+  getRecipeProgress: (recipeId: string) => CookingProgress | undefined;
   isLoading: boolean;
   refreshData: () => Promise<void>;
 }
@@ -28,6 +33,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [editedRecipes, setEditedRecipes] = useState<Record<string, Recipe>>({});
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [cookingProgress, setCookingProgress] = useState<Record<string, CookingProgress>>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -35,17 +41,19 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [storedUsers, storedFavs, storedEdits, storedDeleted] = await Promise.all([
+      const [storedUsers, storedFavs, storedEdits, storedDeleted, storedProgress] = await Promise.all([
         storage.getUserRecipes(),
         storage.getFavoriteIds(),
         storage.getEditedRecipes(),
         storage.getDeletedRecipeIds(),
+        storage.getCookingProgress(),
       ]);
 
       setUserRecipes(storedUsers || []);
       setFavoriteIds(storedFavs || []);
       setEditedRecipes(storedEdits || {});
       setDeletedIds(storedDeleted || []);
+      setCookingProgress(storedProgress || {});
     } catch (err) {
       console.error('Failed to load recipe data:', err);
     } finally {
@@ -125,7 +133,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name: data.name.trim(),
         image: data.image && data.image.trim() ? data.image.trim() : DEFAULT_RECIPE_IMAGE,
         category: data.category.trim(),
-        ingredients: data.ingredients.map((i) => i.trim()).filter(Boolean),
+        ingredients: parseIngredients(data.ingredients),
         instructions: data.instructions.map((i) => i.trim()).filter(Boolean),
         preparationTime: Number(data.preparationTime) || 15,
         servings: Number(data.servings) || 2,
@@ -151,7 +159,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name: data.name.trim(),
         image: data.image && data.image.trim() ? data.image.trim() : DEFAULT_RECIPE_IMAGE,
         category: data.category.trim(),
-        ingredients: data.ingredients.map((i) => i.trim()).filter(Boolean),
+        ingredients: parseIngredients(data.ingredients),
         instructions: data.instructions.map((i) => i.trim()).filter(Boolean),
         preparationTime: Number(data.preparationTime) || 15,
         servings: Number(data.servings) || 2,
@@ -202,6 +210,14 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         await storage.saveFavoriteIds(nextFavs);
       }
 
+      // 4. Remove cooking progress if present
+      await storage.clearRecipeProgress(id);
+      setCookingProgress((prev) => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+
       return true;
     },
     [userRecipes, favoriteIds]
@@ -214,12 +230,45 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [allRecipes]
   );
 
+  const updateCookingProgress = useCallback(
+    async (recipeId: string, step: number, completedSteps: number[] = []) => {
+      const recipe = allRecipes.find((r) => r.id === recipeId);
+      const total = recipe ? recipe.instructions.length : Math.max(step, 1);
+      const updated = await storage.saveRecipeProgress(recipeId, step, total, completedSteps);
+      setCookingProgress((prev) => ({
+        ...prev,
+        [recipeId]: updated,
+      }));
+    },
+    [allRecipes]
+  );
+
+  const clearCookingProgress = useCallback(
+    async (recipeId: string) => {
+      await storage.clearRecipeProgress(recipeId);
+      setCookingProgress((prev) => {
+        const copy = { ...prev };
+        delete copy[recipeId];
+        return copy;
+      });
+    },
+    []
+  );
+
+  const getRecipeProgress = useCallback(
+    (recipeId: string): CookingProgress | undefined => {
+      return cookingProgress[recipeId];
+    },
+    [cookingProgress]
+  );
+
   return (
     <RecipeContext.Provider
       value={{
         recipes: allRecipes,
         userRecipes: activeUserRecipes,
         favoriteRecipes,
+        cookingProgress,
         selectedCategory,
         setSelectedCategory,
         searchQuery,
@@ -230,6 +279,9 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateRecipe,
         deleteRecipe,
         getRecipeById,
+        updateCookingProgress,
+        clearCookingProgress,
+        getRecipeProgress,
         isLoading,
         refreshData: loadData,
       }}

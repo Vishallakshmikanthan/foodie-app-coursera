@@ -6,8 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { ChevronRight, Sparkles } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { Recipe } from '../types/recipe';
+import { useRecipes } from '../context/RecipeContext';
 import { PortraitCard } from './PortraitCard';
 import { palette, typography } from '../theme/tokens';
 
@@ -24,6 +25,7 @@ export const RecommendedRow: React.FC<RecommendedRowProps> = ({
   onPressRecipe,
   onPressSeeAll,
 }) => {
+  const { cookingProgress } = useRecipes();
   // Select 5-6 curated dishes for the recommended row
   const recommendedRecipes = useMemo(() => {
     if (!recipes || recipes.length === 0) return [];
@@ -71,8 +73,16 @@ export const RecommendedRow: React.FC<RecommendedRowProps> = ({
         contentContainerStyle={styles.scrollContent}
       >
         {recommendedRecipes.map((recipe, index) => {
-          // Give the first recommended item the "Started" progress indicator to echo the reference yoga app
-          const hasProgress = index === 0;
+          const recipeProgress = cookingProgress[recipe.id];
+          const hasRealProgress =
+            recipeProgress &&
+            recipeProgress.currentStep > 0 &&
+            recipeProgress.currentStep <= recipe.instructions.length;
+
+          // If a recipe has real progress show it; otherwise showcase first card as started per reference
+          const hasProgress = hasRealProgress || index === 0;
+          const currentStep = hasRealProgress ? recipeProgress.currentStep : 2;
+          const totalSteps = recipe.instructions.length || 4;
 
           return (
             <View key={recipe.id} style={styles.cardWrapper}>
@@ -81,8 +91,8 @@ export const RecommendedRow: React.FC<RecommendedRowProps> = ({
                 onToggleFavorite={onToggleFavorite}
                 onPress={onPressRecipe}
                 hasStartedProgress={hasProgress}
-                currentStep={2}
-                totalSteps={4}
+                currentStep={currentStep}
+                totalSteps={totalSteps}
               />
             </View>
           );

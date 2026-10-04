@@ -66,8 +66,10 @@ export default function ExploreScreen() {
       const matchesSearch =
         query === '' ||
         recipe.name.toLowerCase().includes(query) ||
-        recipe.category.toLowerCase().includes(query) ||
-        recipe.ingredients.some((ing) => ing.toLowerCase().includes(query));
+        recipe.ingredients.some((ing) => {
+          const name = typeof ing === 'string' ? ing : ing.name;
+          return name.toLowerCase().includes(query);
+        });
 
       // Quick filter
       let matchesQuick = true;

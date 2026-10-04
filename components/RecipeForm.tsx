@@ -23,6 +23,7 @@ import {
 import { DifficultyLevel, RecipeFormData } from '../types/recipe';
 import { RECIPE_CATEGORIES, DEFAULT_RECIPE_IMAGE } from '../data/recipes';
 import { validateRecipeForm } from '../utils/recipeUtils';
+import { formatIngredient, parseIngredients } from '../utils/ingredientUtils';
 import { useTheme } from '../theme/ThemeProvider';
 import { palette, typography } from '../theme/tokens';
 
@@ -79,10 +80,14 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
   // Ingredients state
   const [ingredients, setIngredients] = useState<string[]>(
     initialData?.ingredients && initialData.ingredients.length > 0
-      ? initialData.ingredients
+      ? initialData.ingredients.map((ing) => (typeof ing === 'string' ? ing : formatIngredient(ing)))
       : ['']
   );
+  const [ingredientMode, setIngredientMode] = useState<'structured' | 'free'>('structured');
   const [newIngredientInput, setNewIngredientInput] = useState('');
+  const [newQty, setNewQty] = useState('');
+  const [newUnit, setNewUnit] = useState('');
+  const [newName, setNewName] = useState('');
 
   // Instructions state
   const [instructions, setInstructions] = useState<string[]>(
@@ -130,10 +135,24 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
 
   // Add ingredient
   const handleAddIngredient = () => {
-    if (newIngredientInput.trim()) {
-      setIngredients((prev) => [...prev, newIngredientInput.trim()]);
-      setNewIngredientInput('');
-      setErrors((prev) => ({ ...prev, ingredients: '' }));
+    if (ingredientMode === 'structured') {
+      const parts: string[] = [];
+      if (newQty.trim()) parts.push(newQty.trim());
+      if (newUnit.trim()) parts.push(newUnit.trim());
+      if (newName.trim()) parts.push(newName.trim());
+      if (parts.length > 0) {
+        setIngredients((prev) => [...prev, parts.join(' ')]);
+        setNewQty('');
+        setNewUnit('');
+        setNewName('');
+        setErrors((prev) => ({ ...prev, ingredients: '' }));
+      }
+    } else {
+      if (newIngredientInput.trim()) {
+        setIngredients((prev) => [...prev, newIngredientInput.trim()]);
+        setNewIngredientInput('');
+        setErrors((prev) => ({ ...prev, ingredients: '' }));
+      }
     }
   };
 
@@ -177,7 +196,15 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
   // Handle Form Submission
   const handleSubmit = async () => {
     let finalIngredients = [...ingredients];
-    if (newIngredientInput.trim()) {
+    if (ingredientMode === 'structured') {
+      const parts: string[] = [];
+      if (newQty.trim()) parts.push(newQty.trim());
+      if (newUnit.trim()) parts.push(newUnit.trim());
+      if (newName.trim()) parts.push(newName.trim());
+      if (parts.length > 0) {
+        finalIngredients.push(parts.join(' '));
+      }
+    } else if (newIngredientInput.trim()) {
       finalIngredients.push(newIngredientInput.trim());
     }
     finalIngredients = finalIngredients.filter((i) => i.trim().length > 0);
@@ -196,7 +223,7 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
       preparationTime: parseInt(prepTime, 10) || 0,
       servings: parseInt(servings, 10) || 0,
       calories: parseInt(calories, 10) || 0,
-      ingredients: finalIngredients,
+      ingredients: parseIngredients(finalIngredients),
       instructions: finalInstructions,
     };
 
@@ -505,34 +532,148 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
           </View>
         ))}
 
-        {/* Add new ingredient field */}
-        <View style={styles.addInputRow}>
-          <TextInput
-            value={newIngredientInput}
-            onChangeText={setNewIngredientInput}
-            placeholder="Type another ingredient..."
-            placeholderTextColor={colors.textMuted}
-            style={[
-              styles.input,
-              styles.addInputField,
-              {
-                backgroundColor: colors.inputBackground,
-                borderColor: colors.inputBorder,
-                color: colors.text,
-              },
-            ]}
-            onSubmitEditing={handleAddIngredient}
-            returnKeyType="done"
-          />
+        {/* Mode selector between structured entry and free text */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
           <TouchableOpacity
-            onPress={handleAddIngredient}
-            activeOpacity={0.8}
-            style={[styles.addBtn, { backgroundColor: colors.primary }]}
+            onPress={() => setIngredientMode('structured')}
+            activeOpacity={0.7}
+            style={{
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 16,
+              backgroundColor: ingredientMode === 'structured' ? colors.primary : 'rgba(255,255,255,0.08)',
+              borderWidth: 1,
+              borderColor: ingredientMode === 'structured' ? colors.primary : colors.borderSubtle,
+            }}
           >
-            <Plus size={18} color={palette.white} />
-            <Text style={styles.addBtnText}>Add</Text>
+            <Text
+              style={{
+                fontSize: 12,
+                fontFamily: typography.families.bold,
+                color: ingredientMode === 'structured' ? palette.white : colors.textSecondary,
+              }}
+            >
+              Structured (Qty, Unit, Name)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setIngredientMode('free')}
+            activeOpacity={0.7}
+            style={{
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 16,
+              backgroundColor: ingredientMode === 'free' ? colors.primary : 'rgba(255,255,255,0.08)',
+              borderWidth: 1,
+              borderColor: ingredientMode === 'free' ? colors.primary : colors.borderSubtle,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontFamily: typography.families.bold,
+                color: ingredientMode === 'free' ? palette.white : colors.textSecondary,
+              }}
+            >
+              Free Text
+            </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Add new ingredient field */}
+        {ingredientMode === 'structured' ? (
+          <View style={{ gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TextInput
+                value={newQty}
+                onChangeText={setNewQty}
+                placeholder="Qty (2)"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="numeric"
+                style={[
+                  styles.input,
+                  {
+                    flex: 1,
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.inputBorder,
+                    color: colors.text,
+                  },
+                ]}
+              />
+              <TextInput
+                value={newUnit}
+                onChangeText={setNewUnit}
+                placeholder="Unit (cups, tbsp)"
+                placeholderTextColor={colors.textMuted}
+                style={[
+                  styles.input,
+                  {
+                    flex: 1.5,
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.inputBorder,
+                    color: colors.text,
+                  },
+                ]}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TextInput
+                value={newName}
+                onChangeText={setNewName}
+                placeholder="Ingredient name (e.g. olive oil)"
+                placeholderTextColor={colors.textMuted}
+                style={[
+                  styles.input,
+                  {
+                    flex: 1,
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.inputBorder,
+                    color: colors.text,
+                  },
+                ]}
+                onSubmitEditing={handleAddIngredient}
+                returnKeyType="done"
+              />
+              <TouchableOpacity
+                onPress={handleAddIngredient}
+                activeOpacity={0.8}
+                style={[styles.addBtn, { backgroundColor: colors.primary }]}
+              >
+                <Plus size={18} color={palette.white} />
+                <Text style={styles.addBtnText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.addInputRow}>
+            <TextInput
+              value={newIngredientInput}
+              onChangeText={setNewIngredientInput}
+              placeholder="e.g. 2 cups almond flour"
+              placeholderTextColor={colors.textMuted}
+              style={[
+                styles.input,
+                styles.addInputField,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
+                },
+              ]}
+              onSubmitEditing={handleAddIngredient}
+              returnKeyType="done"
+            />
+            <TouchableOpacity
+              onPress={handleAddIngredient}
+              activeOpacity={0.8}
+              style={[styles.addBtn, { backgroundColor: colors.primary }]}
+            >
+              <Plus size={18} color={palette.white} />
+              <Text style={styles.addBtnText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* 7. Step-by-Step Instructions */}

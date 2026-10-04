@@ -60,6 +60,7 @@ export default function RootLayout() {
             <Stack.Screen name="add-recipe" options={{ headerShown: false }} />
             <Stack.Screen name="edit-recipe" options={{ headerShown: false }} />
             <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="cook/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="glass-preview" options={{ headerShown: false }} />
           </Stack>
         </RecipeProvider>

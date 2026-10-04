@@ -19,7 +19,11 @@ export function validateRecipeForm(data: RecipeFormData): {
   if (!data.ingredients || data.ingredients.length === 0) {
     errors.ingredients = 'Please add at least one ingredient.';
   } else {
-    const hasValidIngredient = data.ingredients.some((ing) => ing && ing.trim().length > 0);
+    const hasValidIngredient = data.ingredients.some((ing) => {
+      if (!ing) return false;
+      if (typeof ing === 'string') return ing.trim().length > 0;
+      return (typeof ing.name === 'string' && ing.name.trim().length > 0) || (typeof ing.quantity === 'number' && ing.quantity > 0);
+    });
     if (!hasValidIngredient) {
       errors.ingredients = 'At least one ingredient cannot be empty.';
     }

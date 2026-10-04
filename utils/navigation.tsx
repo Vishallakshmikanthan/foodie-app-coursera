@@ -31,6 +31,10 @@ export const AppNavigationProvider: React.FC<{ children: React.ReactNode }> = ({
         const id = route.replace('/recipe/', '');
         return { pathname: '/recipe', params: { id } };
       }
+      if (route.startsWith('/cook/')) {
+        const id = route.replace('/cook/', '');
+        return { pathname: '/cook', params: { id } };
+      }
       if (route.includes('?')) {
         const [path, queryString] = route.split('?');
         const params: Record<string, string> = {};
