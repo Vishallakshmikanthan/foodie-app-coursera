@@ -18,6 +18,7 @@ import AddRecipeScreen from './app/add-recipe';
 import EditRecipeScreen from './app/edit-recipe';
 import RecipeDetailScreen from './app/recipe/[id]';
 import CookModeScreen from './app/cook/[id]';
+import ShoppingListScreen from './app/shopping-list';
 import GlassPreviewScreen from './app/glass-preview';
 
 function SnackScreenRenderer() {
@@ -51,6 +52,9 @@ function SnackScreenRenderer() {
     }
     if (pathname === '/cook' || pathname.startsWith('/cook/')) {
       return <CookModeScreen />;
+    }
+    if (pathname === '/shopping-list') {
+      return <ShoppingListScreen />;
     }
     if (pathname === '/glass-preview') {
       return <GlassPreviewScreen />;

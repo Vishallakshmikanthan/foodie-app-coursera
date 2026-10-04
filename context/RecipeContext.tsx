@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Recipe, RecipeFormData, CookingProgress } from '../types/recipe';
+import { Recipe, RecipeFormData, CookingProgress, Ingredient } from '../types/recipe';
+import { ShoppingItem, RecentlyViewedItem } from '../types/smart';
 import { SEED_RECIPES, DEFAULT_RECIPE_IMAGE } from '../data/recipes';
 import { storage } from '../utils/storage';
 import { parseIngredients } from '../utils/ingredientUtils';
+import { mergeIngredientsIntoList } from '../utils/shoppingUtils';
 
 interface RecipeContextType {
   recipes: Recipe[];
@@ -22,6 +24,17 @@ interface RecipeContextType {
   updateCookingProgress: (recipeId: string, step: number, completedSteps?: number[]) => Promise<void>;
   clearCookingProgress: (recipeId: string) => Promise<void>;
   getRecipeProgress: (recipeId: string) => CookingProgress | undefined;
+  recentlyViewed: RecentlyViewedItem[];
+  addRecentlyViewed: (recipeId: string) => Promise<void>;
+  recentSearches: string[];
+  addRecentSearch: (query: string) => Promise<void>;
+  clearRecentSearches: () => Promise<void>;
+  shoppingList: ShoppingItem[];
+  addToShoppingList: (ingredients: Ingredient[], recipeId?: string, recipeName?: string, multiplier?: number) => Promise<number>;
+  toggleShoppingItem: (id: string) => Promise<void>;
+  removeShoppingItem: (id: string) => Promise<void>;
+  clearCompletedShoppingItems: () => Promise<void>;
+  clearAllShoppingItems: () => Promise<void>;
   isLoading: boolean;
   refreshData: () => Promise<void>;
 }
@@ -34,19 +47,33 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [editedRecipes, setEditedRecipes] = useState<Record<string, Recipe>>({});
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [cookingProgress, setCookingProgress] = useState<Record<string, CookingProgress>>({});
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedItem[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const loadData = useCallback(async () => {
     try {
-      setIsLoading(true);
-      const [storedUsers, storedFavs, storedEdits, storedDeleted, storedProgress] = await Promise.all([
+      const [
+        storedUsers,
+        storedFavs,
+        storedEdits,
+        storedDeleted,
+        storedProgress,
+        storedRecentViewed,
+        storedRecentSearches,
+        storedShoppingList,
+      ] = await Promise.all([
         storage.getUserRecipes(),
         storage.getFavoriteIds(),
         storage.getEditedRecipes(),
         storage.getDeletedRecipeIds(),
         storage.getCookingProgress(),
+        storage.getRecentlyViewed(),
+        storage.getRecentSearches(),
+        storage.getShoppingList(),
       ]);
 
       setUserRecipes(storedUsers || []);
@@ -54,6 +81,9 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setEditedRecipes(storedEdits || {});
       setDeletedIds(storedDeleted || []);
       setCookingProgress(storedProgress || {});
+      setRecentlyViewed(storedRecentViewed || []);
+      setRecentSearches(storedRecentSearches || []);
+      setShoppingList(storedShoppingList || []);
     } catch (err) {
       console.error('Failed to load recipe data:', err);
     } finally {
@@ -262,6 +292,73 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [cookingProgress]
   );
 
+  const addRecentlyViewed = useCallback(async (recipeId: string) => {
+    const updated = await storage.addRecentlyViewed(recipeId);
+    setRecentlyViewed(updated);
+  }, []);
+
+  const addRecentSearch = useCallback(async (query: string) => {
+    const updated = await storage.addRecentSearch(query);
+    setRecentSearches(updated);
+  }, []);
+
+  const clearRecentSearches = useCallback(async () => {
+    await storage.clearRecentSearches();
+    setRecentSearches([]);
+  }, []);
+
+  const addToShoppingList = useCallback(
+    async (
+      ingredients: Ingredient[],
+      recipeId?: string,
+      recipeName?: string,
+      multiplier: number = 1
+    ): Promise<number> => {
+      const merged = mergeIngredientsIntoList(
+        shoppingList,
+        ingredients,
+        recipeId,
+        recipeName,
+        multiplier
+      );
+      setShoppingList(merged);
+      await storage.saveShoppingList(merged);
+      return ingredients.length;
+    },
+    [shoppingList]
+  );
+
+  const toggleShoppingItem = useCallback(
+    async (id: string) => {
+      const updated = shoppingList.map((item) =>
+        item.id === id ? { ...item, isChecked: !item.isChecked } : item
+      );
+      setShoppingList(updated);
+      await storage.saveShoppingList(updated);
+    },
+    [shoppingList]
+  );
+
+  const removeShoppingItem = useCallback(
+    async (id: string) => {
+      const updated = shoppingList.filter((item) => item.id !== id);
+      setShoppingList(updated);
+      await storage.saveShoppingList(updated);
+    },
+    [shoppingList]
+  );
+
+  const clearCompletedShoppingItems = useCallback(async () => {
+    const updated = shoppingList.filter((item) => !item.isChecked);
+    setShoppingList(updated);
+    await storage.saveShoppingList(updated);
+  }, [shoppingList]);
+
+  const clearAllShoppingItems = useCallback(async () => {
+    setShoppingList([]);
+    await storage.saveShoppingList([]);
+  }, []);
+
   return (
     <RecipeContext.Provider
       value={{
@@ -282,6 +379,17 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateCookingProgress,
         clearCookingProgress,
         getRecipeProgress,
+        recentlyViewed,
+        addRecentlyViewed,
+        recentSearches,
+        addRecentSearch,
+        clearRecentSearches,
+        shoppingList,
+        addToShoppingList,
+        toggleShoppingItem,
+        removeShoppingItem,
+        clearCompletedShoppingItems,
+        clearAllShoppingItems,
         isLoading,
         refreshData: loadData,
       }}

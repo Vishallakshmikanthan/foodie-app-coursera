@@ -25,6 +25,7 @@ export interface PortraitCardProps {
   hasStartedProgress?: boolean;
   currentStep?: number;
   totalSteps?: number;
+  subtitle?: string;
 }
 
 export const PortraitCard: React.FC<PortraitCardProps> = ({
@@ -34,6 +35,7 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
   hasStartedProgress = false,
   currentStep = 2,
   totalSteps = 5,
+  subtitle,
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
@@ -195,6 +197,12 @@ export const PortraitCard: React.FC<PortraitCardProps> = ({
                 ))}
               </View>
               <Text style={styles.progressText}>Started · Step {currentStep}/{totalSteps}</Text>
+            </View>
+          ) : subtitle ? (
+            <View style={styles.subtitleRow}>
+              <Text style={[styles.categoryText, { color: tint.accent }]} numberOfLines={1}>
+                {subtitle}
+              </Text>
             </View>
           ) : (
             <View style={styles.subtitleRow}>

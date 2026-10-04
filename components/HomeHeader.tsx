@@ -1,18 +1,18 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import { Image } from 'expo-image';
+import { Heart, Menu, Search, X } from 'lucide-react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
-  View,
+  Animated,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Animated,
-  Platform,
+  View,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { Menu, Heart, Search, X, CookingPot } from 'lucide-react-native';
+import { palette, typography } from '../theme/tokens';
 import { GlassIconButton } from './ui/GlassIconButton';
 import { GlassSurface } from './ui/GlassSurface';
-import { palette, typography, radii } from '../theme/tokens';
 
 export interface HomeHeaderProps {
   userName?: string;
@@ -26,7 +26,7 @@ export interface HomeHeaderProps {
 }
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
-  userName = 'Alex',
+  userName = 'Vishal',
   favoritesCount,
   onPressMenu,
   onPressFavorites,

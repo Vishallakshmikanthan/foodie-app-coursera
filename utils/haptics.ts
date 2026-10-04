@@ -124,6 +124,30 @@ class HapticsService {
   }
 
   /**
+   * Light impact
+   */
+  public async impactLight(): Promise<void> {
+    if (!this.isEnabled()) return;
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      // Ignore unsupported device errors
+    }
+  }
+
+  /**
+   * Success notification feedback
+   */
+  public async notificationSuccess(): Promise<void> {
+    if (!this.isEnabled()) return;
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      // Ignore unsupported device errors
+    }
+  }
+
+  /**
    * Medium impact (e.g. Start Cooking button or timer start)
    */
   public async impactMedium(): Promise<void> {

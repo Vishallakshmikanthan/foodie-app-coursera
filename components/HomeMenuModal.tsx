@@ -1,29 +1,30 @@
+import { Image } from 'expo-image';
+import {
+  ChefHat,
+  ChevronRight,
+  Compass,
+  Heart,
+  PlusCircle,
+  ShieldCheck,
+  Sparkles,
+  UtensilsCrossed,
+  X,
+  ShoppingCart,
+} from 'lucide-react-native';
 import React from 'react';
 import {
   Modal,
-  View,
+  Platform,
+  Pressable,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Pressable,
-  Platform,
+  View,
 } from 'react-native';
-import { Image } from 'expo-image';
-import {
-  X,
-  Compass,
-  Heart,
-  UtensilsCrossed,
-  PlusCircle,
-  Sparkles,
-  ChevronRight,
-  ShieldCheck,
-  ChefHat,
-} from 'lucide-react-native';
-import { GlassSurface } from './ui/GlassSurface';
 import { useRecipes } from '../context/RecipeContext';
+import { palette, typography } from '../theme/tokens';
 import { useAppRouter } from '../utils/navigation';
-import { palette, typography, radii } from '../theme/tokens';
+import { GlassSurface } from './ui/GlassSurface';
 
 export interface HomeMenuModalProps {
   visible: boolean;
@@ -34,10 +35,10 @@ export interface HomeMenuModalProps {
 export const HomeMenuModal: React.FC<HomeMenuModalProps> = ({
   visible,
   onClose,
-  userName = 'Alex',
+  userName = 'Vishal',
 }) => {
   const router = useAppRouter();
-  const { recipes, userRecipes, favoriteRecipes } = useRecipes();
+  const { recipes, userRecipes, favoriteRecipes, shoppingList } = useRecipes();
 
   const handleNavigate = (route: string) => {
     onClose();
@@ -96,7 +97,7 @@ export const HomeMenuModal: React.FC<HomeMenuModalProps> = ({
                 />
               </View>
               <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{userName} Chen</Text>
+                <Text style={styles.profileName}>{userName} </Text>
                 <Text style={styles.profileRole}>Master Home Chef</Text>
               </View>
             </View>
@@ -161,6 +162,25 @@ export const HomeMenuModal: React.FC<HomeMenuModalProps> = ({
                   <UtensilsCrossed size={18} color={palette.peach[300]} />
                 </View>
                 <Text style={styles.menuText}>My Food Collection</Text>
+                <ChevronRight size={16} color={palette.text.onDarkSecondary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => handleNavigate('/shopping-list')}
+                activeOpacity={0.75}
+                style={styles.menuItem}
+              >
+                <View style={[styles.menuIconBg, { backgroundColor: 'rgba(195, 235, 197, 0.18)' }]}>
+                  <ShoppingCart size={18} color={palette.mint[300]} />
+                </View>
+                <Text style={styles.menuText}>Shopping List</Text>
+                {shoppingList.length > 0 && (
+                  <View style={[styles.itemBadge, { backgroundColor: palette.mint[300] }]}>
+                    <Text style={[styles.itemBadgeText, { color: palette.forest[900] }]}>
+                      {shoppingList.filter((i) => !i.isChecked).length}
+                    </Text>
+                  </View>
+                )}
                 <ChevronRight size={16} color={palette.text.onDarkSecondary} />
               </TouchableOpacity>
 

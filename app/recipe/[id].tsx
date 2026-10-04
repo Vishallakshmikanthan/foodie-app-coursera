@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,8 @@ import {
   RotateCcw,
   Sparkles,
   Info,
+  ShoppingCart,
+  Check,
 } from 'lucide-react-native';
 import { useRecipes } from '../../context/RecipeContext';
 import { FavoriteButton } from '../../components/FavoriteButton';
@@ -35,6 +37,7 @@ import { formatIngredient } from '../../utils/ingredientUtils';
 import { detectTimerInText } from '../../utils/timerUtils';
 import { ServingsControlBar } from '../../components/ServingsControlBar';
 import { DetailTabs, DetailTabType } from '../../components/DetailTabs';
+import { ShoppingListModal } from '../../components/ShoppingListModal';
 import { GlassSurface } from '../../components/ui/GlassSurface';
 import { GlassIconButton } from '../../components/ui/GlassIconButton';
 import { GlassChip } from '../../components/ui/GlassChip';
@@ -56,10 +59,24 @@ export default function RecipeDetailScreen() {
     isLoading,
     getRecipeProgress,
     updateCookingProgress,
+    addRecentlyViewed,
+    addToShoppingList,
+    shoppingList,
   } = useRecipes();
 
   const recipe = id ? getRecipeById(id) : undefined;
   const progress = recipe ? getRecipeProgress(recipe.id) : undefined;
+
+  // Track recently viewed
+  useEffect(() => {
+    if (recipe?.id) {
+      addRecentlyViewed(recipe.id);
+    }
+  }, [recipe?.id, addRecentlyViewed]);
+
+  // Shopping list modal state & confirmation toast
+  const [isShoppingModalOpen, setIsShoppingModalOpen] = useState(false);
+  const [justAddedToList, setJustAddedToList] = useState(false);
 
   // Servings and live scaling state
   const baseServings = recipe?.servings || 2;
@@ -90,6 +107,16 @@ export default function RecipeDetailScreen() {
       ...prev,
       [index]: !prev[index],
     }));
+  };
+
+  const handleAddToShoppingList = async () => {
+    if (!recipe) return;
+    haptics.notificationSuccess();
+    await addToShoppingList(recipe.ingredients, recipe.id, recipe.name, multiplier);
+    setJustAddedToList(true);
+    setTimeout(() => {
+      setJustAddedToList(false);
+    }, 3000);
   };
 
   const handleShare = async () => {
@@ -239,6 +266,15 @@ export default function RecipeDetailScreen() {
 
             <View style={styles.heroRightActions}>
               <GlassIconButton
+                icon={ShoppingCart}
+                size={42}
+                iconSize={19}
+                iconColor={palette.mint[300]}
+                onPress={() => setIsShoppingModalOpen(true)}
+                accessibilityLabel="Open shopping list"
+              />
+
+              <GlassIconButton
                 icon={Share2}
                 size={42}
                 iconSize={19}
@@ -370,6 +406,44 @@ export default function RecipeDetailScreen() {
                   <Text style={styles.resetChecksBtnText}>Reset</Text>
                 </TouchableOpacity>
               )}
+            </View>
+
+            {/* Shopping List Quick Add Action */}
+            <View style={styles.shoppingActionRow}>
+              <TouchableOpacity
+                onPress={handleAddToShoppingList}
+                activeOpacity={0.82}
+                style={[
+                  styles.addShoppingBtn,
+                  justAddedToList && styles.addShoppingBtnActive,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Add ingredients to shopping list"
+              >
+                {justAddedToList ? (
+                  <>
+                    <Check size={16} color={palette.forest[900]} strokeWidth={2.5} />
+                    <Text style={styles.addShoppingBtnTextActive}>
+                      Added {recipe.ingredients.length} items to Shopping List!
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart size={15} color={palette.mint[300]} />
+                    <Text style={styles.addShoppingBtnText}>
+                      Add all to Shopping List ({recipe.ingredients.length} items)
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setIsShoppingModalOpen(true)}
+                activeOpacity={0.7}
+                style={styles.viewShoppingListBtn}
+              >
+                <Text style={styles.viewShoppingListText}>View List</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Ingredients List with Live Scaled Quantities */}
@@ -639,6 +713,12 @@ export default function RecipeDetailScreen() {
           )}
         </GlassSurface>
       </SafeAreaView>
+
+      {/* Shopping List Modal */}
+      <ShoppingListModal
+        visible={isShoppingModalOpen}
+        onClose={() => setIsShoppingModalOpen(false)}
+      />
     </View>
   );
 }
@@ -785,6 +865,52 @@ const styles = StyleSheet.create({
     fontFamily: typography.families.medium,
     fontSize: 11,
     color: palette.gray[300],
+  },
+  shoppingActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  addShoppingBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(195, 235, 197, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(195, 235, 197, 0.25)',
+  },
+  addShoppingBtnActive: {
+    backgroundColor: palette.mint[300],
+    borderColor: palette.mint[300],
+  },
+  addShoppingBtnText: {
+    fontFamily: typography.families.semiBold,
+    fontSize: 12.5,
+    color: palette.mint[300],
+  },
+  addShoppingBtnTextActive: {
+    fontFamily: typography.families.bold,
+    fontSize: 12.5,
+    color: palette.forest[900],
+  },
+  viewShoppingListBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  viewShoppingListText: {
+    fontFamily: typography.families.medium,
+    fontSize: 12,
+    color: palette.text.onDarkSecondary,
   },
   ingredientsList: {
     gap: 8,

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recipe, CookingProgress } from '../types/recipe';
+import { ShoppingItem, RecentlyViewedItem } from '../types/smart';
 import { parseIngredients } from './ingredientUtils';
 
 const STORAGE_KEYS = {
@@ -8,6 +9,9 @@ const STORAGE_KEYS = {
   EDITED_RECIPES: '@foodie_edited_recipes',
   DELETED_RECIPES: '@foodie_deleted_recipes',
   COOKING_PROGRESS: '@foodie_cooking_progress',
+  RECENTLY_VIEWED: '@foodie_recently_viewed',
+  RECENT_SEARCHES: '@foodie_recent_searches',
+  SHOPPING_LIST: '@foodie_shopping_list',
 };
 
 export const storage = {
@@ -168,4 +172,82 @@ export const storage = {
       console.error(`Error clearing cooking progress for recipe ${recipeId}:`, error);
     }
   },
+
+  // Recently Viewed Recipes (Ordered by most recent, capped at 20)
+  async getRecentlyViewed(): Promise<RecentlyViewedItem[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.RECENTLY_VIEWED);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error reading recently viewed from storage:', error);
+      return [];
+    }
+  },
+
+  async addRecentlyViewed(recipeId: string): Promise<RecentlyViewedItem[]> {
+    try {
+      const current = await this.getRecentlyViewed();
+      const filtered = current.filter((item) => item.recipeId !== recipeId);
+      const updated = [{ recipeId, viewedAt: Date.now() }, ...filtered].slice(0, 20);
+      await AsyncStorage.setItem(STORAGE_KEYS.RECENTLY_VIEWED, JSON.stringify(updated));
+      return updated;
+    } catch (error) {
+      console.error('Error adding recently viewed recipe:', error);
+      return [];
+    }
+  },
+
+  // Recent Search Queries (Capped at 10)
+  async getRecentSearches(): Promise<string[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.RECENT_SEARCHES);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error reading recent searches from storage:', error);
+      return [];
+    }
+  },
+
+  async addRecentSearch(query: string): Promise<string[]> {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+    try {
+      const current = await this.getRecentSearches();
+      const filtered = current.filter((q) => q.toLowerCase() !== trimmed.toLowerCase());
+      const updated = [trimmed, ...filtered].slice(0, 10);
+      await AsyncStorage.setItem(STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(updated));
+      return updated;
+    } catch (error) {
+      console.error('Error saving recent search:', error);
+      return [];
+    }
+  },
+
+  async clearRecentSearches(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.RECENT_SEARCHES);
+    } catch (error) {
+      console.error('Error clearing recent searches:', error);
+    }
+  },
+
+  // Shopping List Persistence
+  async getShoppingList(): Promise<ShoppingItem[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.SHOPPING_LIST);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error reading shopping list from storage:', error);
+      return [];
+    }
+  },
+
+  async saveShoppingList(items: ShoppingItem[]): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.SHOPPING_LIST, JSON.stringify(items));
+    } catch (error) {
+      console.error('Error saving shopping list:', error);
+    }
+  },
 };
+

@@ -6,10 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, Sparkles } from 'lucide-react-native';
 import { Recipe } from '../types/recipe';
 import { useRecipes } from '../context/RecipeContext';
 import { PortraitCard } from './PortraitCard';
+import { getSmartRecommendations } from '../utils/recommendationEngine';
 import { palette, typography } from '../theme/tokens';
 
 export interface RecommendedRowProps {
@@ -25,24 +26,14 @@ export const RecommendedRow: React.FC<RecommendedRowProps> = ({
   onPressRecipe,
   onPressSeeAll,
 }) => {
-  const { cookingProgress } = useRecipes();
-  // Select 5-6 curated dishes for the recommended row
-  const recommendedRecipes = useMemo(() => {
-    if (!recipes || recipes.length === 0) return [];
-    // Prioritize varied dishes: dinner, snack, dessert, salad
-    const preferredIds = ['seed-3', 'seed-9', 'seed-10', 'seed-12', 'seed-7', 'seed-13'];
-    const curated = preferredIds
-      .map((id) => recipes.find((r) => r.id === id))
-      .filter((r): r is Recipe => Boolean(r));
+  const { cookingProgress, favoriteRecipes, recentlyViewed } = useRecipes();
 
-    if (curated.length >= 4) {
-      return curated;
-    }
+  // Smart recommendations scored by time-of-day, favorites, and view history
+  const recommendedItems = useMemo(() => {
+    return getSmartRecommendations(recipes, favoriteRecipes, recentlyViewed, 8);
+  }, [recipes, favoriteRecipes, recentlyViewed]);
 
-    return recipes.slice(2, 8);
-  }, [recipes]);
-
-  if (recommendedRecipes.length === 0) {
+  if (recommendedItems.length === 0) {
     return null;
   }
 
@@ -72,17 +63,12 @@ export const RecommendedRow: React.FC<RecommendedRowProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {recommendedRecipes.map((recipe, index) => {
+        {recommendedItems.map(({ recipe, reason }) => {
           const recipeProgress = cookingProgress[recipe.id];
           const hasRealProgress =
             recipeProgress &&
             recipeProgress.currentStep > 0 &&
             recipeProgress.currentStep <= recipe.instructions.length;
-
-          // If a recipe has real progress show it; otherwise showcase first card as started per reference
-          const hasProgress = hasRealProgress || index === 0;
-          const currentStep = hasRealProgress ? recipeProgress.currentStep : 2;
-          const totalSteps = recipe.instructions.length || 4;
 
           return (
             <View key={recipe.id} style={styles.cardWrapper}>
@@ -90,9 +76,10 @@ export const RecommendedRow: React.FC<RecommendedRowProps> = ({
                 recipe={recipe}
                 onToggleFavorite={onToggleFavorite}
                 onPress={onPressRecipe}
-                hasStartedProgress={hasProgress}
-                currentStep={currentStep}
-                totalSteps={totalSteps}
+                hasStartedProgress={Boolean(hasRealProgress)}
+                currentStep={recipeProgress?.currentStep}
+                totalSteps={recipe.instructions.length}
+                subtitle={reason}
               />
             </View>
           );

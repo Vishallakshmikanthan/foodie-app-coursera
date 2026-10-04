@@ -17,15 +17,19 @@ import {
   Clock,
   Sparkles,
   CookingPot,
+  SlidersHorizontal,
 } from 'lucide-react-native';
 import { GlassIconButton, GlassChip } from '../../components/ui';
 import { useRecipes } from '../../context/RecipeContext';
 import { RecipeCard } from '../../components/RecipeCard';
 import { FeedSkeletonList } from '../../components/CardSkeleton';
 import { EmptyState } from '../../components/EmptyState';
+import { FiltersModal, countActiveFilters, filterRecipesByOptions } from '../../components/FiltersModal';
+import { SearchSuggestions } from '../../components/SearchSuggestions';
 import { useAppRouter } from '../../utils/navigation';
 import { useTheme } from '../../theme/ThemeProvider';
 import { palette, typography, radii } from '../../theme/tokens';
+import { RecipeFilterOptions } from '../../types/smart';
 import { haptics } from '../../utils/haptics';
 
 const QUICK_FILTERS = [
@@ -44,62 +48,72 @@ export default function ExploreScreen() {
     selectedCategory,
     setSelectedCategory,
     toggleFavorite,
+    recentSearches,
+    addRecentSearch,
+    clearRecentSearches,
     isLoading,
   } = useRecipes();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeQuickFilter, setActiveQuickFilter] = useState('all');
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<RecipeFilterOptions>({
+    difficulty: 'All',
+    diet: 'All',
+  });
 
   const categories = useMemo(() => {
     const unique = Array.from(new Set(recipes.map((r) => r.category)));
     return ['All', ...unique];
   }, [recipes]);
 
+  const activeFiltersCount = useMemo(() => {
+    return countActiveFilters(filterOptions);
+  }, [filterOptions]);
+
   const filteredRecipes = useMemo(() => {
-    return recipes.filter((recipe) => {
-      // Category filter
-      const matchesCat =
-        selectedCategory === 'All' ||
-        recipe.category.toLowerCase() === selectedCategory.toLowerCase();
+    // 1. Base filter via multi-faceted filter options & search query
+    const baseFiltered = filterRecipesByOptions(
+      recipes,
+      { ...filterOptions, category: selectedCategory },
+      searchQuery
+    );
 
-      // Search query filter
-      const query = searchQuery.trim().toLowerCase();
-      const matchesSearch =
-        query === '' ||
-        recipe.name.toLowerCase().includes(query) ||
-        recipe.ingredients.some((ing) => {
-          const name = typeof ing === 'string' ? ing : ing.name;
-          return name.toLowerCase().includes(query);
-        });
+    // 2. Apply quick filters
+    if (activeQuickFilter === 'all') return baseFiltered;
 
-      // Quick filter
-      let matchesQuick = true;
+    return baseFiltered.filter((recipe) => {
       if (activeQuickFilter === 'quick') {
-        matchesQuick = recipe.preparationTime <= 30;
-      } else if (activeQuickFilter === 'easy') {
-        matchesQuick = recipe.difficulty === 'Easy';
-      } else if (activeQuickFilter === 'comfort') {
-        matchesQuick =
+        return recipe.preparationTime <= 30;
+      }
+      if (activeQuickFilter === 'easy') {
+        return recipe.difficulty === 'Easy';
+      }
+      if (activeQuickFilter === 'comfort') {
+        return (
           recipe.category === 'Dinner' ||
           recipe.category === 'Lunch' ||
           recipe.name.toLowerCase().includes('pasta') ||
-          recipe.name.toLowerCase().includes('curry');
-      } else if (activeQuickFilter === 'light') {
-        matchesQuick =
+          recipe.name.toLowerCase().includes('curry')
+        );
+      }
+      if (activeQuickFilter === 'light') {
+        return (
           recipe.category === 'Salad' ||
           recipe.calories < 450 ||
           recipe.name.toLowerCase().includes('salad') ||
-          recipe.name.toLowerCase().includes('bowl');
+          recipe.name.toLowerCase().includes('bowl')
+        );
       }
-
-      return matchesCat && matchesSearch && matchesQuick;
+      return true;
     });
-  }, [recipes, selectedCategory, searchQuery, activeQuickFilter]);
+  }, [recipes, filterOptions, selectedCategory, searchQuery, activeQuickFilter]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
     setSelectedCategory('All');
     setActiveQuickFilter('all');
+    setFilterOptions({ difficulty: 'All', diet: 'All' });
   };
 
   return (
@@ -129,34 +143,76 @@ export default function ExploreScreen() {
             />
           </View>
 
-          {/* Search Bar */}
-          <View
-            style={[
-              styles.searchBar,
-              {
-                backgroundColor: colors.inputBackground,
-                borderColor: colors.inputBorder,
-              },
-            ]}
-          >
-            <Search size={18} color={colors.textMuted} style={styles.searchIcon} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search dishes, ingredients, tags..."
-              placeholderTextColor={colors.textMuted}
-              style={[styles.searchInput, { color: colors.text }]}
-              clearButtonMode="while-editing"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setSearchQuery('')}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <X size={16} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
+          {/* Search Bar + Filter Button Row */}
+          <View style={styles.searchRow}>
+            <View
+              style={[
+                styles.searchBar,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                },
+              ]}
+            >
+              <Search size={18} color={colors.textMuted} style={styles.searchIcon} />
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={() => {
+                  if (searchQuery.trim()) {
+                    addRecentSearch(searchQuery.trim());
+                  }
+                }}
+                placeholder="Search dishes, ingredients, tags..."
+                placeholderTextColor={colors.textMuted}
+                style={[styles.searchInput, { color: colors.text }]}
+                clearButtonMode="while-editing"
+                returnKeyType="search"
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <X size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <TouchableOpacity
+              onPress={() => {
+                haptics.buttonPress();
+                setIsFilterModalOpen(true);
+              }}
+              activeOpacity={0.75}
+              style={[
+                styles.filterIconButton,
+                activeFiltersCount > 0 && styles.filterIconButtonActive,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Open filter sheet"
+            >
+              <SlidersHorizontal
+                size={18}
+                color={activeFiltersCount > 0 ? palette.forest[900] : palette.mint[300]}
+              />
+              {activeFiltersCount > 0 && (
+                <View style={styles.filterDotBadge}>
+                  <Text style={styles.filterDotBadgeText}>{activeFiltersCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
+
+          {/* Search Suggestions (Recent Searches + Ingredient Chips) */}
+          <SearchSuggestions
+            recentSearches={recentSearches}
+            onSelectQuery={(q) => {
+              setSearchQuery(q);
+              addRecentSearch(q);
+            }}
+            onClearRecentSearches={clearRecentSearches}
+          />
 
           {/* Quick Filter Horizontal Scroll */}
           <ScrollView
@@ -272,9 +328,22 @@ export default function ExploreScreen() {
           <Text style={[styles.resultsTitle, { color: colors.text }]}>
             {selectedCategory === 'All' ? 'All Discoveries' : `${selectedCategory}`}
           </Text>
-          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-            {filteredRecipes.length} {filteredRecipes.length === 1 ? 'recipe' : 'recipes'}
-          </Text>
+          <View style={styles.resultsRightRow}>
+            {activeFiltersCount > 0 && (
+              <TouchableOpacity
+                onPress={handleResetFilters}
+                activeOpacity={0.7}
+                style={styles.clearFiltersChip}
+              >
+                <Text style={styles.clearFiltersChipText}>
+                  Reset ({activeFiltersCount})
+                </Text>
+              </TouchableOpacity>
+            )}
+            <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
+              {filteredRecipes.length} {filteredRecipes.length === 1 ? 'recipe' : 'recipes'}
+            </Text>
+          </View>
         </View>
 
         {/* Recipe Cards List */}
@@ -304,6 +373,15 @@ export default function ExploreScreen() {
             }
           />
         )}
+
+        {/* Smart Filters Bottom Sheet Modal */}
+        <FiltersModal
+          visible={isFilterModalOpen}
+          onClose={() => setIsFilterModalOpen(false)}
+          options={filterOptions}
+          onChangeOptions={setFilterOptions}
+          recipes={recipes}
+        />
       </View>
     </SafeAreaView>
   );
@@ -348,7 +426,13 @@ const styles = StyleSheet.create({
     fontFamily: typography.families.medium,
     marginTop: 1,
   },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 14,
@@ -364,6 +448,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: typography.families.regular,
     padding: 0,
+  },
+  filterIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  filterIconButtonActive: {
+    backgroundColor: palette.mint[300],
+    borderColor: palette.mint[300],
+  },
+  filterDotBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: palette.coral[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  filterDotBadgeText: {
+    fontFamily: typography.families.bold,
+    fontSize: 9.5,
+    color: palette.white,
+  },
+  resultsRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  clearFiltersChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(240, 183, 159, 0.15)',
+    borderWidth: 1,
+    borderColor: palette.peach[300],
+  },
+  clearFiltersChipText: {
+    fontFamily: typography.families.semiBold,
+    fontSize: 11,
+    color: palette.peach[300],
   },
   quickFiltersScrollView: {
     marginTop: 10,

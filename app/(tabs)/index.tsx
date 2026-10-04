@@ -1,29 +1,33 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import { CookingPot, SlidersHorizontal } from 'lucide-react-native';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CookingPot, Sparkles, Filter } from 'lucide-react-native';
-import { GradientBackground } from '../../components/ui/GradientBackground';
+import { FeedSkeletonList } from '../../components/CardSkeleton';
+import { CategoryTabs } from '../../components/CategoryTabs';
+import { ContinueCookingRow } from '../../components/ContinueCookingRow';
+import { EmptyState } from '../../components/EmptyState';
+import { FiltersModal, countActiveFilters, filterRecipesByOptions } from '../../components/FiltersModal';
+import { GlassRefreshControl } from '../../components/GlassRefreshControl';
+import { HeroCarousel } from '../../components/HeroCarousel';
 import { HomeHeader } from '../../components/HomeHeader';
 import { HomeMenuModal } from '../../components/HomeMenuModal';
-import { HeroCarousel } from '../../components/HeroCarousel';
-import { RecommendedRow } from '../../components/RecommendedRow';
-import { CategoryTabs } from '../../components/CategoryTabs';
 import { RecipeCard } from '../../components/RecipeCard';
-import { GlassRefreshControl } from '../../components/GlassRefreshControl';
-import { FeedSkeletonList } from '../../components/CardSkeleton';
-import { EmptyState } from '../../components/EmptyState';
+import { RecommendedRow } from '../../components/RecommendedRow';
+import { SearchSuggestions } from '../../components/SearchSuggestions';
+import { GradientBackground } from '../../components/ui/GradientBackground';
 import { useRecipes } from '../../context/RecipeContext';
-import { useAppRouter } from '../../utils/navigation';
 import { useTheme } from '../../theme/ThemeProvider';
-import { palette, typography } from '../../theme/tokens';
+import { palette, typography, radii } from '../../theme/tokens';
 import { Recipe } from '../../types/recipe';
+import { RecipeFilterOptions } from '../../types/smart';
+import { useAppRouter } from '../../utils/navigation';
+import { haptics } from '../../utils/haptics';
 
 export default function HomeScreen() {
   const router = useAppRouter();
@@ -36,13 +40,21 @@ export default function HomeScreen() {
     setSearchQuery,
     toggleFavorite,
     favoriteRecipes,
+    recentSearches,
+    addRecentSearch,
+    clearRecentSearches,
     isLoading,
     refreshData,
   } = useRecipes();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<RecipeFilterOptions>({
+    difficulty: 'All',
+    diet: 'All',
+  });
 
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
@@ -54,27 +66,18 @@ export default function HomeScreen() {
     }
   }, [refreshData]);
 
-  // Filter recipes based on selected category and active search query
+  const activeFiltersCount = useMemo(() => {
+    return countActiveFilters(filterOptions);
+  }, [filterOptions]);
+
+  // Filter recipes based on selected category, active search query, and smart filter options
   const filteredRecipes = useMemo(() => {
-    return recipes.filter((recipe) => {
-      // Category filter: 'All' matches every recipe
-      const matchesCategory =
-        selectedCategory === 'All' ||
-        recipe.category.toLowerCase() === selectedCategory.toLowerCase();
-
-      // Search filter: matches recipe name, category or ingredients
-      const query = searchQuery.trim().toLowerCase();
-      const matchesSearch =
-        query === '' ||
-        recipe.name.toLowerCase().includes(query) ||
-        recipe.ingredients.some((ing) => {
-          const name = typeof ing === 'string' ? ing : ing.name;
-          return name.toLowerCase().includes(query);
-        });
-
-      return matchesCategory && matchesSearch;
-    });
-  }, [recipes, selectedCategory, searchQuery]);
+    return filterRecipesByOptions(
+      recipes,
+      { ...filterOptions, category: selectedCategory },
+      searchQuery
+    );
+  }, [recipes, filterOptions, selectedCategory, searchQuery]);
 
   const handleRecipePress = useCallback(
     (recipe: Recipe) => {
@@ -110,7 +113,7 @@ export default function HomeScreen() {
         >
           {/* Top Header Row with Glass Controls & Time-Aware Greeting */}
           <HomeHeader
-            userName="Alex"
+            userName="Vishal"
             favoritesCount={favoriteRecipes.length}
             onPressMenu={() => setIsMenuOpen(true)}
             onPressFavorites={handleFavoritesPress}
@@ -125,13 +128,31 @@ export default function HomeScreen() {
             }}
           />
 
-          {/* Hero Carousel (Only shown when not deeply searching to avoid competing focus) */}
+          {/* Search Suggestions (Recent Searches + Ingredient Chips) */}
+          {isSearchOpen && (
+            <SearchSuggestions
+              recentSearches={recentSearches}
+              onSelectQuery={(q) => {
+                setSearchQuery(q);
+                addRecentSearch(q);
+              }}
+              onClearRecentSearches={clearRecentSearches}
+              style={{ marginHorizontal: 20 }}
+            />
+          )}
+
+          {/* Hero Carousel (Only shown when not searching to avoid competing focus) */}
           {searchQuery.trim().length === 0 && (
             <HeroCarousel
               recipes={recipes}
               onToggleFavorite={toggleFavorite}
               onPressRecipe={handleRecipePress}
             />
+          )}
+
+          {/* Continue Cooking Row (Shown when returning user has active progress) */}
+          {searchQuery.trim().length === 0 && (
+            <ContinueCookingRow onPressRecipe={handleRecipePress} />
           )}
 
           {/* Recommended For You Section (Shown when no search query is active) */}
@@ -150,15 +171,15 @@ export default function HomeScreen() {
             onSelectCategory={setSelectedCategory}
           />
 
-          {/* Feed Header info */}
+          {/* Feed Header info with Smart Filter Button */}
           <View style={styles.feedInfoRow}>
             <View style={styles.feedTitleContainer}>
               <Text style={styles.feedSectionTitle}>
                 {searchQuery.trim().length > 0
                   ? 'Search Results'
                   : selectedCategory === 'All'
-                  ? 'Curated Dishes'
-                  : `${selectedCategory} Dishes`}
+                    ? 'Curated Dishes'
+                    : `${selectedCategory} Dishes`}
               </Text>
               <View style={styles.feedBadge}>
                 <Text style={styles.feedBadgeText}>
@@ -167,14 +188,52 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {selectedCategory !== 'All' && (
-              <Text
-                style={styles.resetFilterText}
-                onPress={() => setSelectedCategory('All')}
+            <View style={styles.feedActionsRow}>
+              {/* Glass Filter Button with Active Count Badge */}
+              <TouchableOpacity
+                onPress={() => {
+                  haptics.buttonPress();
+                  setIsFilterModalOpen(true);
+                }}
+                activeOpacity={0.75}
+                style={[
+                  styles.filterBtn,
+                  activeFiltersCount > 0 && styles.filterBtnActive,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Open filters"
               >
-                Clear filter
-              </Text>
-            )}
+                <SlidersHorizontal
+                  size={13}
+                  color={activeFiltersCount > 0 ? palette.forest[900] : palette.mint[300]}
+                />
+                <Text
+                  style={[
+                    styles.filterBtnText,
+                    activeFiltersCount > 0 && styles.filterBtnTextActive,
+                  ]}
+                >
+                  Filter
+                </Text>
+                {activeFiltersCount > 0 && (
+                  <View style={styles.filterBadge}>
+                    <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {(selectedCategory !== 'All' || activeFiltersCount > 0) && (
+                <Text
+                  style={styles.resetFilterText}
+                  onPress={() => {
+                    setSelectedCategory('All');
+                    setFilterOptions({ difficulty: 'All', diet: 'All' });
+                  }}
+                >
+                  Reset
+                </Text>
+              )}
+            </View>
           </View>
 
           {/* Filtered Recipe Cards List */}
@@ -199,12 +258,13 @@ export default function HomeScreen() {
                 description={
                   searchQuery.trim().length > 0
                     ? `No culinary matches found for "${searchQuery}". Try different keywords or reset filter.`
-                    : `No recipes found in the ${selectedCategory} category yet.`
+                    : 'No recipes match your active filter combination.'
                 }
-                actionText="Reset Filters"
+                actionText="Reset All Filters"
                 onAction={() => {
                   setSelectedCategory('All');
                   setSearchQuery('');
+                  setFilterOptions({ difficulty: 'All', diet: 'All' });
                 }}
               />
             </View>
@@ -216,7 +276,16 @@ export default function HomeScreen() {
       <HomeMenuModal
         visible={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
-        userName="Alex"
+        userName="Vishal"
+      />
+
+      {/* Smart Filters Bottom Sheet Modal */}
+      <FiltersModal
+        visible={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        options={filterOptions}
+        onChangeOptions={setFilterOptions}
+        recipes={recipes}
       />
     </View>
   );
@@ -266,12 +335,53 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: palette.mint[300],
   },
+  feedActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+  },
+  filterBtnActive: {
+    backgroundColor: palette.mint[300],
+    borderColor: palette.mint[300],
+  },
+  filterBtnText: {
+    fontFamily: typography.families.semiBold,
+    fontSize: 12,
+    color: palette.mint[300],
+  },
+  filterBtnTextActive: {
+    color: palette.forest[900],
+  },
+  filterBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: palette.coral[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeText: {
+    fontFamily: typography.families.bold,
+    fontSize: 9.5,
+    color: palette.white,
+  },
   resetFilterText: {
     fontFamily: typography.families.semiBold,
-    fontSize: 13,
+    fontSize: 12.5,
     color: palette.peach[300],
     paddingVertical: 4,
-    paddingLeft: 8,
+    paddingLeft: 4,
   },
   cardsFeed: {
     paddingHorizontal: 16,
